@@ -19,6 +19,9 @@ export type SourceKind =
 
 export type Confidence = 'high' | 'medium' | 'low';
 
+export type { Medal } from '../config/medals';
+import type { Medal } from '../config/medals';
+
 /**
  * A community-estimated shiny rate, as a probability (not a denominator).
  * `low` < `mid` < `high` as probabilities, so `low` is the pessimistic case.
@@ -41,6 +44,13 @@ export interface SourceDef {
   ivFloor: number;
   /** Absent for `trade` sources, which carry no shiny roll of their own. */
   shinyRate?: RateEstimate;
+  /**
+   * The in-game medal this count is read from, or `null` when no medal tracks
+   * it (in which case `medalNote` says what to do instead).
+   */
+  medal: Medal | null;
+  /** Guidance for sources with no medal. Required in spirit when `medal` is null. */
+  medalNote?: string;
   /**
    * If set, this source's count is a SUBSET of the referenced source's count
    * and is subtracted from it so catches are not double counted.

@@ -70,15 +70,23 @@ export function validate(inputs: ModelInputs): ValidationIssue[] {
     const children = SOURCES.filter((s) => s.subsetOf === parentId);
     const childTotal = children.reduce((acc, c) => acc + rawCount(c, inputs), 0);
     const parentTotal = rawCount(parent, inputs);
-    if (childTotal > parentTotal) {
+    // A parent left at zero just means the user has not filled it in yet. The
+    // children still count in full; only the remainder is empty. Flagging that
+    // as an error would fire constantly while someone is mid-entry.
+    if (parentTotal > 0 && childTotal > parentTotal) {
+      const parentName = parent.medal
+        ? `${parent.label} (${parent.medal.name} medal)`
+        : parent.label;
       issues.push({
         sourceId: parentId,
         severity: 'error',
         message:
           `${children.map((c) => c.label.replace(/^…of which /, '')).join(' + ')} = ` +
-          `${childTotal.toLocaleString()}, which is more than the ${parent.label.toLowerCase()} ` +
-          `total of ${parentTotal.toLocaleString()}. These are subsets, not extra catches — ` +
-          `raise the total or lower the subsets. The excess is being ignored.`,
+          `${childTotal.toLocaleString()}, which is more than your ${parentName} total of ` +
+          `${parentTotal.toLocaleString()}. These are subsets carved out of that total, not ` +
+          `extra encounters — raise the parent or lower the subsets. The excess is being ` +
+          `ignored. (If your real medal numbers genuinely look like this, then one of the ` +
+          `medal-nesting assumptions in src/config/rates.ts is wrong for your account.)`,
       });
     }
   }

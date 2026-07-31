@@ -44,12 +44,13 @@ export default function App() {
 
         <div className="flex flex-col gap-6">
           {!hasInput && (
-            <Callout tone="info" title="Start with your wild catch total">
-              Your Pokémon GO medals page has most of these: <em>Collector</em> is your lifetime
-              catches, <em>Breeder</em> is egg hatches, <em>Champion / Battle Legend</em> track
-              raids, <em>Hero / Purifier</em> track Team GO Rocket. Trades come from the{' '}
-              <em>Gentleman</em> and <em>Pilot</em> medals — but remember to enter only the{' '}
-              <strong>shiny</strong> ones there.
+            <Callout tone="info" title="Start with your Collector medal">
+              Open the game, tap your avatar, scroll to <strong>Medals</strong>, and copy the
+              numbers across. <em>Collector</em> is every Pokémon you have caught,{' '}
+              <em>Champion</em> and <em>Battle Legend</em> are raids, <em>Hero</em> and{' '}
+              <em>Ultra Hero</em> are Team GO Rocket, <em>Breeder</em> is eggs. Because Collector
+              already contains your raid, research and Rocket catches, the app subtracts those
+              from it rather than adding them.
             </Callout>
           )}
 

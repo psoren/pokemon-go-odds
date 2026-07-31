@@ -48,6 +48,75 @@ The `P(k)` panel shows two columns per distribution:
 They should agree closely; the app flags any `k` where they diverge by more
 than one percentage point. Trust the exact column.
 
+## Where each number comes from (Medals screen)
+
+Every count is meant to be read straight off the in-game Medals screen —
+trainer avatar → scroll to **Medals**. The medal screen shows your exact
+progress (“47,312 / 50,000”), so you never have to estimate a medal-backed
+number. Medal names, in-game descriptions and thresholds are from
+[Bulbapedia's medal list](https://bulbapedia.bulbagarden.net/wiki/Medal_(GO))
+and live in [`src/config/medals.ts`](src/config/medals.ts).
+
+| Input | Medal | In-game text | Platinum |
+|---|---|---|---|
+| Pokémon caught — all time | **Collector** | “Catch ___ Pokémon” | 50,000 |
+| …research encounters | **Pokémon Ranger** | “Complete ___ Field Research tasks” | 2,500 |
+| Raids won — all tiers | **Champion** | “Win ___ raids” | 2,000 |
+| …Legendary (tier 5) | **Battle Legend** | “Win ___ Legendary raids” | 2,000 |
+| Team GO Rocket members defeated | **Hero** | “Defeat ___ Team GO Rocket members” | 2,000 |
+| …Giovanni | **Ultra Hero** | “Defeat Giovanni ___ time(s)” | 50 |
+| Eggs hatched | **Breeder** | “Hatch ___ Eggs” | 2,500 |
+| *(purification context)* | **Purifier** | “Purify ___ Shadow Pokémon” | 1,000 |
+
+### Inputs with no medal
+
+These are marked **“no medal — estimate”** in the UI. Nothing in the game
+tracks them, and inventing a medal for them would be worse than asking you to
+estimate:
+
+weather-boosted catches · Community Day catches · other event catches ·
+shadow raids · Rocket Leader defeats · weather-boosted grunts · **shiny trades
+at every friendship level**
+
+The **Gentleman** medal (“Trade ___ Pokémon”, platinum 2,500) counts *all*
+trades, not shiny ones, so it cannot fill the trade fields. Count your shiny
+trades by hand.
+
+### Medals overlap — so the app subtracts
+
+This is the part most calculators get wrong. The Collector medal counts
+**every** Pokémon you have caught, which already includes your raid, research
+and Team GO Rocket catches. Entering those separately and letting them add
+would double count them.
+
+So the inputs form a tree, and every child is subtracted from its parent:
+
+```
+Collector  "Catch ___ Pokémon"
+├── weather-boosted / Community Day / other event catches
+├── Champion  "Win ___ raids"
+│   ├── Battle Legend  "Win ___ Legendary raids"
+│   └── Shadow raids
+├── Pokémon Ranger  "Complete ___ Field Research tasks"
+└── Hero  "Defeat ___ Team GO Rocket members"
+    ├── Rocket Leaders
+    ├── Ultra Hero  "Defeat Giovanni ___ time(s)"
+    └── weather-boosted grunts
+
+Breeder  "Hatch ___ Eggs"        (hatching is not catching — a separate root)
+Trades                           (re-rolls of Pokémon counted elsewhere)
+```
+
+What is left over after subtraction is the remainder: plain unboosted wild
+catches, tier 1–4 raids, ordinary grunts. The app shows both numbers — e.g.
+`107,700 (180,000)` means 180,000 entered, 107,700 left after carving out the
+subsets.
+
+**These containments are assumptions**, taken from the unqualified in-game
+medal text. If one is wrong for your account the app will tell you: subsets
+summing to more than their parent is a hard validation error. See
+[MODEL.md](MODEL.md) for how confident each containment is.
+
 ## Rates and their sources
 
 All rates live in [`src/config/rates.ts`](src/config/rates.ts), fully separated
@@ -61,19 +130,19 @@ Bulbapedia. IV floors, by contrast, are datamined and exact.
 
 | Source | Shiny rate (low / **mid** / high) | IV floor | Confidence | Basis |
 |---|---|---|---|---|
-| Wild catches | 1/700 · **1/512** · 1/400 | 0 | high | Bulbapedia base rate 1/512; older Silph estimates nearer 1/450–1/500 |
+| Pokémon caught (remainder = plain wild) | 1/700 · **1/512** · 1/400 | 0 | high | Bulbapedia base rate 1/512; older Silph estimates nearer 1/450–1/500 |
 | …weather-boosted | 1/700 · **1/512** · 1/400 | 4 | high | Weather boost changes the IV floor, not the shiny rate |
 | …Community Day | 1/30 · **1/25** · 1/20 | 0 | high | Bulbapedia: ~1/25 for the featured species |
 | …other event-boosted | 1/256 · **1/128** · 1/64 | 0 | low | Documented event tiers span 1/256 → 1/10; varies enormously by event |
-| Egg hatches | 1/128 · **1/64** · 1/32 | 10 | medium | Bulbapedia: ~1/64 from eggs |
-| Research encounters | 1/512 · **1/64** · 1/32 | 10 | low | ~1/64 for field research; event research runs much hotter |
-| Tier 1–4 raids | 1/128 · **1/64** · 1/32 | 10 | high | Bulbapedia: 1/64 for non-5-star raids |
-| Tier 5 legendary raids | 1/25 · **1/20** · 1/15 | 10 | high | Bulbapedia: 1/20 for 5-star raids |
-| Shadow raids | 1/64 · **1/20** · 1/10 | 6 | low | Floor 6 confirmed; **shiny rate extrapolated, not verified** |
-| Rocket grunt shadows | 1/512 · **1/256** · 1/128 | 0 | medium | Bulbapedia: 1/256 for grunts |
-| …weather-boosted | 1/512 · **1/256** · 1/128 | 4 | medium | Weather-boosted shadow floor is 4 |
-| Rocket leader shadows | 1/128 · **1/64** · 1/32 | 0 | medium | Bulbapedia: 1/64 for Arlo / Cliff / Sierra |
-| Giovanni shadows | 1/128 · **1/64** · 1/20 | 6 | medium | Bulbapedia: 1/64 for Giovanni; floor 6 |
+| …research encounters | 1/512 · **1/64** · 1/32 | 10 | low | ~1/64 for field research; event research runs much hotter |
+| Raids won (remainder = tier 1–4) | 1/128 · **1/64** · 1/32 | 10 | high | Bulbapedia: 1/64 for non-5-star raids |
+| …Legendary (tier 5) | 1/25 · **1/20** · 1/15 | 10 | high | Bulbapedia: 1/20 for 5-star raids |
+| …Shadow raids | 1/64 · **1/20** · 1/10 | 6 | low | Floor 6 confirmed; **shiny rate extrapolated, not verified** |
+| Rocket defeated (remainder = grunts) | 1/512 · **1/256** · 1/128 | 0 | medium | Bulbapedia: 1/256 for grunts |
+| …weather-boosted grunts | 1/512 · **1/256** · 1/128 | 4 | medium | Weather-boosted shadow floor is 4 |
+| …Leaders (Arlo / Cliff / Sierra) | 1/128 · **1/64** · 1/32 | 0 | medium | Bulbapedia: 1/64 for Rocket Leaders |
+| …Giovanni | 1/128 · **1/64** · 1/20 | 6 | medium | Bulbapedia: 1/64 for Giovanni; floor 6 |
+| Eggs hatched | 1/128 · **1/64** · 1/32 | 10 | medium | Bulbapedia: ~1/64 from eggs |
 | Good Friend trade | — | 1 | high | Trade floors are exact |
 | Great Friend trade | — | 2 | high | " |
 | Ultra Friend trade | — | 3 | high | " |
@@ -104,9 +173,11 @@ so a shadow needs 13/13/13 or better to purify into a hundo:
 `P = (3 / (16 − F))³`, exactly 27× the un-purified odds. Shadows get their own
 purification column and never contribute to shundos-via-trade.
 
-**3. Community Day and event catches are a subset of wild catches.** They are
-subtracted from the wild total, not added to it. Entering subsets that exceed
-their parent is flagged as a validation error in the UI.
+**3. Medals overlap, so counts are subtracted rather than added.** Community
+Day and event catches are a subset of your Collector total — and so are raids,
+research and Team GO Rocket catches. All of them are subtracted from their
+parent medal rather than added on top. Entering subsets that exceed their
+parent is flagged as a validation error in the UI.
 
 ## Testing
 
@@ -135,7 +206,8 @@ to garbage).
 
 ```
 src/
-  config/rates.ts        all rate estimates + citations — no logic
+  config/medals.ts       in-game medals: names, descriptions, tier thresholds
+  config/rates.ts        all rate estimates + citations + medal nesting — no logic
   model/
     types.ts             shared types
     math.ts              pure probability: IV floors, Poisson, Poisson-binomial DP

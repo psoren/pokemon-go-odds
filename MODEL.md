@@ -134,24 +134,75 @@ purify selectively — usually only the shadows that are already close — and a
 purified shadow loses the shadow damage bonus, so most players do not purify
 everything. Treat the toggle as the two ends of a range, not a prediction.
 
-### 3.3 Subset sources are subtracted, not added
+### 3.3 Counts come from medals, and medals overlap
 
-Community Day catches, weather-boosted catches and event catches are all also
-wild catches. Entering them separately and letting them add would double count.
-The app subtracts every child source from its parent:
+Every count in the app is meant to be read off the in-game Medals screen rather
+than estimated. That is a real accuracy win — the medal screen shows exact
+progress — but it forces the model to deal with the fact that **medals contain
+each other**. The Collector medal's in-game text is an unqualified "Catch ___
+Pokémon", so it already includes the Pokémon you caught from raids, from
+research and from Team GO Rocket.
 
-- `wild-weather`, `community-day`, `event-wild` are subtracted from `wild`.
-- `grunt-shadow-weather` is subtracted from `grunt-shadow`.
+So sources form a tree and every child's count is subtracted from its parent:
 
-An over-subscribed parent (subsets summing to more than the total) is reported
-as a validation error in the UI and the parent is clamped to zero rather than
-going negative.
+```
+Collector          "Catch ___ Pokémon"                          50,000
+├── weather-boosted / Community Day / other event catches       (no medal)
+├── Champion       "Win ___ raids"                               2,000
+│   ├── Battle Legend  "Win ___ Legendary raids"                 2,000
+│   └── Shadow raids                                            (no medal)
+├── Pokémon Ranger "Complete ___ Field Research tasks"           2,500
+└── Hero           "Defeat ___ Team GO Rocket members"           2,000
+    ├── Rocket Leaders                                          (no medal)
+    ├── Ultra Hero "Defeat Giovanni ___ time(s)"                    50
+    └── weather-boosted grunts                                  (no medal)
 
-**Known approximation.** The subsets are treated as mutually exclusive. A
-weather-boosted Community Day catch is genuinely both, and the model has no cell
-for it — you have to decide which bucket it goes in. Put it in Community Day:
-the shiny rate difference (1/25 vs 1/512) dwarfs the IV floor difference
-(0 vs 4).
+Breeder            "Hatch ___ Eggs"                              2,500
+```
+
+A parent's *remainder* after subtraction is what gets its own rate: the
+Collector remainder is plain unboosted wild catches, the Champion remainder is
+tier 1–4 raids, the Hero remainder is ordinary grunts.
+
+**How confident is each containment?**
+
+| Containment | Confidence | Why |
+|---|---|---|
+| Raid catches ⊂ Collector | high | Raid bosses are caught, and the medal text is unqualified |
+| Research catches ⊂ Collector | high | Same |
+| Rocket catches ⊂ Collector | high | Same |
+| Legendary raids ⊂ Champion | high | "Win ___ raids" does not exclude 5-star |
+| Shadow raids ⊂ Champion | high | Shadow raids are raids |
+| Leaders ⊂ Hero | high | Leaders are Team GO Rocket members; the medal was renamed from "Grunts" to "members" |
+| Giovanni ⊂ Hero | **low** | Some sources say Giovanni only feeds Ultra Hero. Immaterial either way — at platinum it is 50 battles against 2,000 |
+| Eggs ⊄ Collector | medium | Hatching is not catching, and Breeder tracks it separately |
+
+**The validator is the safety net.** If any of these is wrong for your account,
+your real medal numbers will not fit: subsets summing to more than their parent
+is a hard error in the UI. That check is what makes these assumptions
+falsifiable rather than silent.
+
+**Known approximations here:**
+
+- **A parent left at zero is treated as "not filled in yet", not as an error.**
+  The children still contribute in full; only the remainder is empty. Without
+  this the app would scream at you the whole time you were typing.
+- **The medals count the wrong verb.** Champion counts raids *won*, not bosses
+  *caught*; Hero counts Rocket members *defeated*, not shadows *caught*;
+  Pokémon Ranger counts field research tasks *completed*, most of which reward
+  items rather than an encounter. Each of these makes the app **overestimate**
+  encounters from that source. Pokémon Ranger is the worst offender — treat it
+  as an upper bound and lower it.
+- **Special and Timed Research encounters are not counted by any medal.**
+  Pokémon Ranger covers Field Research only. Add them by hand.
+- **Subsets are treated as mutually exclusive.** A weather-boosted Community
+  Day catch is genuinely both, and the model has no cell for it. Put it in
+  Community Day: the shiny rate difference (1/25 vs 1/512) dwarfs the IV floor
+  difference (0 vs 4).
+- **No medal exists for shiny trades.** The Gentleman medal counts all trades.
+  The trade fields must be counted by hand, which makes them the least reliable
+  inputs in the app — and, per the contribution chart, usually the most
+  important ones. That is an uncomfortable combination and worth knowing.
 
 ---
 
@@ -189,15 +240,20 @@ The default of 1/20 is extrapolated from the 5-star raid rate. The IV floor of 6
 is confirmed; the shiny rate is not. Unless you have done many shadow raids it
 will not matter, but it is the weakest citation in `src/config/rates.ts`.
 
-### 4.4 Counts you enter are not what the model thinks they are
+### 4.4 The medals count a slightly different thing than the model wants
 
-- **Raid counts** are raids *completed*; the model treats them as *catches*. If
-  you have fled a boss, your effective count is lower.
-- **Rocket grunt counts** should be shiny-*eligible* shadow encounters, and only
-  the ones you actually caught.
-- **Medal counts** conflate things: the Collector medal counts catches, not
-  encounters, which is what you want — but Breeder counts eggs hatched
-  including non-shiny-eligible species.
+Covered in detail in §3.3, but to summarise the direction of the error: the
+medals count *battles won* and *tasks completed*, while the model wants
+*Pokémon caught*. Champion counts raids won even if you fled the boss; Hero
+counts Rocket members defeated, not shadows caught; Pokémon Ranger counts field
+research tasks completed, most of which reward items rather than an encounter.
+All three run high, and every one of them therefore **overestimates** expected
+shinies.
+
+Going the other way, no medal counts Special or Timed Research encounters, and
+no medal counts shiny trades, so those inputs start at zero unless you fill them
+in by hand. The trade fields being both hand-counted and (per the contribution
+chart) usually dominant is the single most uncomfortable fact about this model.
 
 ### 4.5 Ditto, Smeargle, and species with bespoke rates
 
