@@ -10,7 +10,16 @@ import { communityDayCount, effectivePerEvent } from '../model/forward';
 import type { ModelInputs, ModelOutput, Scenario } from '../model/types';
 import { fmtInt } from '../lib/format';
 import { NumberField, Panel } from './ui';
-import { Sparkle } from './art';
+import { Pokeball, Sparkle } from './art';
+
+/**
+ * Sprites are vendored into the repo rather than hotlinked, so the page still
+ * makes no network requests at runtime and works offline. Base URL matters:
+ * GitHub Pages serves this app from a subpath.
+ */
+function spriteUrl(dex: number): string {
+  return `${import.meta.env.BASE_URL}sprites/${dex}.png`;
+}
 
 const SCENARIOS: Scenario[] = ['low', 'mid', 'high'];
 
@@ -191,27 +200,47 @@ export function CommunityDayPicker({
                         type="button"
                         onClick={() => toggle(e.id)}
                         aria-pressed={on}
-                        className={`flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-left text-[11px] leading-tight transition ${
+                        className={`relative flex items-center gap-1.5 rounded-lg border py-1 pl-1 pr-2 text-left text-[11px] leading-tight transition ${
                           on
-                            ? 'border-shiny/50 bg-shiny/10 text-slate-100'
+                            ? 'border-shiny/60 bg-shiny/10 text-slate-100'
                             : 'border-edge/70 text-muted hover:border-slate-500 hover:text-slate-300'
                         }`}
                       >
-                        <span
-                          className={`grid size-3.5 shrink-0 place-items-center rounded-sm border text-[9px] ${
-                            on ? 'border-shiny bg-shiny text-ink' : 'border-edge'
-                          }`}
-                          aria-hidden="true"
-                        >
-                          {on ? '✓' : ''}
-                        </span>
-                        <span className="min-w-0">
+                        {e.dex !== null ? (
+                          <img
+                            src={spriteUrl(e.dex)}
+                            alt=""
+                            width={40}
+                            height={40}
+                            loading="lazy"
+                            aria-hidden="true"
+                            className={`size-10 shrink-0 transition ${
+                              on ? '' : 'opacity-60 grayscale'
+                            }`}
+                            style={{ imageRendering: 'pixelated' }}
+                          />
+                        ) : (
+                          <Pokeball
+                            className={`size-7 shrink-0 ${on ? '' : 'opacity-50 grayscale'}`}
+                            top="#f6c453"
+                            bottom="#e8edf9"
+                          />
+                        )}
+                        <span className="min-w-0 flex-1">
                           <span className="block truncate">{e.featured}</span>
                           <span className="block text-[10px] text-muted">
                             {MONTH_NAMES[e.month - 1]}
                             {e.classic && ' · Classic'}
                           </span>
                         </span>
+                        {on && (
+                          <span
+                            className="absolute right-1 top-1 grid size-3.5 place-items-center rounded-full bg-shiny text-[8px] font-bold text-ink"
+                            aria-hidden="true"
+                          >
+                            ✓
+                          </span>
+                        )}
                       </button>
                     );
                   })}

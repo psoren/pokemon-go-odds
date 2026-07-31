@@ -126,6 +126,13 @@ Event list compiled from
 and Nintendo Life's Community Day history (2024–2026), in
 [`src/config/communityDays.ts`](src/config/communityDays.ts).
 
+Each event shows its featured Pokémon's sprite. Sprites come from the
+[PokeAPI/sprites](https://github.com/PokeAPI/sprites) dataset and are vendored
+into `public/sprites/` rather than hotlinked, so the page still makes no network
+requests at runtime and works offline. Regional forms show their base species
+(an Alolan Geodude renders as Geodude), and the multi-species December events
+get a Poké Ball instead.
+
 One of the remaining assumptions matters far more than the rest: **shiny trades**. Lucky trades
 usually dominate expected shundos, and nothing in the game counts them. If you
 replace one number in that panel, replace that one.
@@ -321,6 +328,15 @@ src/
   lib/format.ts          display formatting
 MODEL.md                 assumptions and known approximations
 ```
+
+## Attribution
+
+Pokémon and Pokémon character names are trademarks of Nintendo, Creatures Inc.
+and GAME FREAK Inc. This is an unofficial fan-made calculator with no
+affiliation to or endorsement from any of them. Sprites are redistributed from
+the community-maintained [PokeAPI/sprites](https://github.com/PokeAPI/sprites)
+dataset. All other artwork in the app (Poké Balls, sparkles, the shadow flame)
+is original SVG drawn for this project.
 
 ## Caveats
 
