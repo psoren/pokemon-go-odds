@@ -3,6 +3,7 @@ import type { ScenarioBundle } from '../model/forward';
 import { fmtLambda, fmtRange } from '../lib/format';
 import { PerfectIV, ShundoMark, Sparkle } from './art';
 import { LuckLine, luckFor } from './LuckPanel';
+import { NumberField } from './ui';
 import type { Metric as ModelMetric, ModelInputs } from '../model/types';
 
 type Metric = 'lambdaShiny' | 'lambdaHundo' | 'lambdaShundo';
@@ -52,10 +53,20 @@ const CARDS: {
 export function Headline({
   bundle,
   inputs,
+  setInputs,
 }: {
   bundle: ScenarioBundle;
   inputs: ModelInputs;
+  setInputs: (updater: (prev: ModelInputs) => ModelInputs) => void;
 }) {
+  const setObserved = (metric: ModelMetric, n: number | undefined) =>
+    setInputs((prev) => {
+      const observed = { ...prev.observed };
+      if (n === undefined) delete observed[metric];
+      else observed[metric] = n;
+      return { ...prev, observed };
+    });
+
   return (
     <div className="grid gap-3 sm:grid-cols-3">
       {CARDS.map((card) => {
@@ -96,18 +107,25 @@ export function Headline({
                   </>
                 )}
               </div>
-              <div className="mt-2 border-t border-edge/50 pt-2 text-[11px] text-muted">
-                {luck ? (
-                  <>
-                    <span className="text-slate-300">
-                      you have {luck.observed.toLocaleString()}
+              <div className="mt-2 border-t border-edge/50 pt-2">
+                <label className="flex items-center gap-2">
+                  <span className="text-[11px] whitespace-nowrap text-muted">I have</span>
+                  <NumberField
+                    ariaLabel={`Observed ${card.label}`}
+                    value={inputs.observed[card.metric]}
+                    onChange={(n) => setObserved(card.metric, n)}
+                    placeholder="?"
+                    className="w-20 py-1"
+                  />
+                  {!luck && (
+                    <span className="text-[11px] leading-tight text-muted">
+                      to see your percentile
                     </span>
-                    {' — '}
-                    <LuckLine luck={luck} />
-                  </>
-                ) : (
-                  card.blurb
-                )}
+                  )}
+                </label>
+                <div className="mt-1.5 text-[11px] leading-snug">
+                  {luck ? <LuckLine luck={luck} metric={card.metric} /> : <span className="text-muted">{card.blurb}</span>}
+                </div>
               </div>
             </div>
           </div>

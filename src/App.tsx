@@ -40,7 +40,7 @@ export default function App() {
       </header>
 
       <div className="mb-6">
-        <Headline bundle={bundle} inputs={inputs} />
+        <Headline bundle={bundle} inputs={inputs} setInputs={setInputs} />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[24rem_minmax(0,1fr)]">
@@ -59,7 +59,7 @@ export default function App() {
             <ContributionChart model={mid} />
           )}
 
-          <LuckPanel bundle={bundle} inputs={inputs} setInputs={setInputs} />
+          <LuckPanel bundle={bundle} inputs={inputs} />
 
           <AssumptionsPanel inputs={inputs} setInputs={setInputs} model={mid} />
 

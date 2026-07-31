@@ -7,7 +7,7 @@ import {
 } from '../model/percentile';
 import type { Metric, ModelInputs } from '../model/types';
 import { fmtLambda, fmtOneIn, fmtPercent } from '../lib/format';
-import { Callout, NumberField, Panel } from './ui';
+import { Callout, Panel } from './ui';
 import { PerfectIV, ShundoMark, Sparkle } from './art';
 
 const METRICS: {
@@ -58,8 +58,15 @@ export function luckFor(
   );
 }
 
-/** One-line percentile summary for the headline cards. */
-export function LuckLine({ luck }: { luck: LuckRange }) {
+/**
+ * One-line percentile summary for the headline cards.
+ *
+ * The luck verdict is deliberately withheld for hundos. Your hundo tally only
+ * contains the ones you still hold AND have appraised, so it is a systematic
+ * undercount of what the model predicts — calling a low hundo percentile
+ * "unlucky" would contradict the very explanation shown underneath it.
+ */
+export function LuckLine({ luck, metric }: { luck: LuckRange; metric?: Metric }) {
   if (luck.outOfBand) {
     return (
       <span className="text-rose-300">
@@ -84,12 +91,24 @@ export function LuckLine({ luck }: { luck: LuckRange }) {
       </span>
     );
   }
+  const below = luck.percentileHigh < 40;
+  const above = luck.percentileLow > 60;
+  const verdict =
+    metric === 'hundo'
+      ? below
+        ? 'below the model — expected, see below'
+        : above
+          ? 'above the model'
+          : 'matches the model'
+      : below
+        ? 'unlucky'
+        : above
+          ? 'lucky'
+          : 'about par';
   return (
     <span className="text-slate-300">
       {ordinal(luck.percentileLow)}–{ordinal(luck.percentileHigh)} percentile
-      <span className="ml-1 text-muted">
-        {luck.percentileHigh < 40 ? 'unlucky' : luck.percentileLow > 60 ? 'lucky' : 'about par'}
-      </span>
+      <span className="ml-1.5 text-muted">{verdict}</span>
     </span>
   );
 }
@@ -101,50 +120,24 @@ export function LuckLine({ luck }: { luck: LuckRange }) {
 export function LuckPanel({
   bundle,
   inputs,
-  setInputs,
 }: {
   bundle: ScenarioBundle;
   inputs: ModelInputs;
-  setInputs: (updater: (prev: ModelInputs) => ModelInputs) => void;
 }) {
-  const setObserved = (metric: Metric, n: number | undefined) =>
-    setInputs((prev) => {
-      const observed = { ...prev.observed };
-      if (n === undefined) delete observed[metric];
-      else observed[metric] = n;
-      return { ...prev, observed };
-    });
-
   const anyObserved = METRICS.some((m) => inputs.observed[m.key] !== undefined);
 
   return (
     <Panel
       title="How lucky have you been?"
-      subtitle="Enter what you actually have, and see where it lands in the predicted distribution."
+      subtitle="Fill in the “I have” boxes on the cards above. Read-only — this never changes your medal numbers or the rates."
     >
-      <div className="grid gap-3 sm:grid-cols-3">
-        {METRICS.map((m) => (
-          <label key={m.key} className="flex items-center gap-2">
-            <span className="h-4 w-4 shrink-0">{m.art}</span>
-            <span className={`flex-1 text-xs ${m.accent}`}>{m.label} I have</span>
-            <NumberField
-              ariaLabel={`Observed ${m.label}`}
-              value={inputs.observed[m.key]}
-              onChange={(n) => setObserved(m.key, n)}
-              placeholder="—"
-              className="w-20"
-            />
-          </label>
-        ))}
-      </div>
-
       {!anyObserved ? (
-        <p className="mt-4 text-xs leading-relaxed text-muted">
-          Count them in-game and type them in. This is read-only — it never changes your medal
-          numbers or the rates.
+        <p className="text-xs leading-relaxed text-muted">
+          Nothing entered yet. Count your shinies, hundos and shundos in-game and type them into
+          the cards at the top of the page.
         </p>
       ) : (
-        <div className="mt-4 flex flex-col gap-3">
+        <div className="flex flex-col gap-3">
           {METRICS.map((m) => {
             const luck = luckFor(bundle, inputs, m.key);
             if (!luck) return null;
@@ -197,7 +190,7 @@ function LuckDetail({
       </div>
 
       <div className="mt-1.5 text-xs">
-        <LuckLine luck={luck} />
+        <LuckLine luck={luck} metric={metric} />
       </div>
 
       {luck.outOfBand ? (
@@ -268,9 +261,29 @@ function LuckDetail({
           {metric === 'hundo' && (
             <>
               {' '}
-              IV floors are exact, so a ratio far from 1.00 here points at your counts rather
-              than at a rate — most likely the medals counting battles won rather than Pokémon
-              caught.
+              IV floors are exact, so a ratio far from 1.00 points at the counts, not at a rate.
+              {ratio < 0.95 && (
+                <>
+                  {' '}
+                  <span className="text-slate-300">
+                    Below 1.00 is expected, and does not mean you were unlucky.
+                  </span>{' '}
+                  The model counts hundos you <em>encountered</em>; you can only count the ones
+                  you still have and have appraised. Anything transferred before you checked it,
+                  or never appraised at all, is invisible to your tally but not to the model.
+                  Champion, Hero and Pokémon Ranger also count battles won and tasks completed
+                  rather than Pokémon caught, which pushes the prediction up further.
+                </>
+              )}
+              {ratio >= 0.95 && ratio <= 1.05 && <> The model and your collection agree.</>}
+              {ratio > 1.05 && (
+                <>
+                  {' '}
+                  Above 1.00 is the surprising direction — the usual suspects (un-appraised or
+                  transferred Pokémon) all push the other way. Worth checking your weather-boosted
+                  and lucky-trade assumptions, which drive hundos hardest.
+                </>
+              )}
             </>
           )}
         </p>
