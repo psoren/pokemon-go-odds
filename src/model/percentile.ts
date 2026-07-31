@@ -149,6 +149,90 @@ export function assessLuck(trials: Trial[], observed: number): LuckResult {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Predictive distribution — integrating over the rate uncertainty            */
+/* -------------------------------------------------------------------------- */
+
+export interface PredictiveLuck {
+  percentile: number;
+  pAtMost: number;
+  pAtLeast: number;
+}
+
+/**
+ * Where an observation lands once the RATE uncertainty is folded in, rather
+ * than conditioned on one particular rate being correct.
+ *
+ * This exists because the per-scenario approach is degenerate. Evaluating the
+ * percentile separately at λ_low and λ_high and reporting the span answers a
+ * question nobody asked: "if the rarest plausible rates are exactly right, how
+ * lucky were you?" With a 4x-wide rate band the two answers are always ~0 and
+ * ~100, so the range is always the whole scale and the app always refuses to
+ * speak — even when the observation sits exactly on the best guess.
+ *
+ * The right object is the PREDICTIVE distribution: λ is itself uncertain, so
+ *
+ *   P(X = k) = ∫ Poisson(k; λ) p(λ) dλ
+ *
+ * approximated here by a weighted grid over [low, high] with a triangular
+ * weight peaked at mid. That is much wider than any single Poisson, which is
+ * exactly right — most of your uncertainty really is about the rates, not about
+ * your luck — and it always yields a usable answer.
+ */
+export function predictiveLuck(
+  lambdaLow: number,
+  lambdaMid: number,
+  lambdaHigh: number,
+  observed: number,
+  grid = 61,
+): PredictiveLuck {
+  const k = Math.max(0, Math.round(observed));
+  const lo = Math.max(0, Math.min(lambdaLow, lambdaMid, lambdaHigh));
+  const hi = Math.max(lambdaLow, lambdaMid, lambdaHigh);
+  const mid = Math.min(hi, Math.max(lo, lambdaMid));
+
+  // Degenerate band: nothing to integrate over, so it is a plain Poisson.
+  if (!(hi > lo)) {
+    const pBelow = poissonCdf(mid, k - 1);
+    const pExact = poissonAt(mid, k);
+    return {
+      percentile: Math.min(100, Math.max(0, (pBelow + 0.5 * pExact) * 100)),
+      pAtMost: Math.min(1, pBelow + pExact),
+      pAtLeast: Math.min(1, 1 - pBelow),
+    };
+  }
+
+  let wSum = 0;
+  let below = 0;
+  let exact = 0;
+  for (let i = 0; i < grid; i++) {
+    const lambda = lo + ((hi - lo) * i) / (grid - 1);
+    // Triangular weight: rises to 1 at mid, falls to 0 at each end.
+    const w =
+      lambda <= mid
+        ? mid > lo
+          ? (lambda - lo) / (mid - lo)
+          : 1
+        : hi > mid
+          ? (hi - lambda) / (hi - mid)
+          : 1;
+    if (!(w > 0)) continue;
+    wSum += w;
+    below += w * poissonCdf(lambda, k - 1);
+    exact += w * poissonAt(lambda, k);
+  }
+  if (!(wSum > 0)) return { percentile: 50, pAtMost: 0.5, pAtLeast: 0.5 };
+
+  const pBelow = below / wSum;
+  const pExact = exact / wSum;
+  const clamp = (x: number) => Math.min(1, Math.max(0, x));
+  return {
+    percentile: clamp(pBelow + 0.5 * pExact) * 100,
+    pAtMost: clamp(pBelow + pExact),
+    pAtLeast: clamp(1 - pBelow),
+  };
+}
+
+/* -------------------------------------------------------------------------- */
 /* The guardrails                                                             */
 /* -------------------------------------------------------------------------- */
 
@@ -177,6 +261,11 @@ export interface LuckRange {
   outOfBand: boolean;
   /** Which tail it fell out of, when outOfBand. */
   direction: 'above' | 'below' | null;
+  /**
+   * The headline answer: where the observation lands once rate uncertainty is
+   * integrated over, rather than conditioned on one scenario being right.
+   */
+  predictive: PredictiveLuck;
   /** λ that would make the observation exactly the median outcome. */
   impliedLambda: number;
   /** impliedLambda / (mid-scenario λ). 1.0 means the model already agrees. */
@@ -231,14 +320,26 @@ export function assessLuckRange(
   const percentileHigh = Math.max(...percentiles);
   const spread = percentileHigh - percentileLow;
 
-  const allAbove = percentiles.every((p) => p > 99);
-  const allBelow = percentiles.every((p) => p < 1);
-
   const impliedLambda = impliedLambdaForMedian(observed);
+  const predictive = predictiveLuck(
+    byScenario.low.lambda,
+    byScenario.mid.lambda,
+    byScenario.high.lambda,
+    observed,
+  );
+
+  // Calibration failure is judged against the PREDICTIVE distribution. Being
+  // outside its 1st-99th band means NO plausible rate explains the observation,
+  // which is the real red flag. The old test — outside the band under each
+  // scenario separately — fired for perfectly ordinary counts, because a wide
+  // rate band guarantees the extremes disagree.
+  const allAbove = predictive.percentile > 99;
+  const allBelow = predictive.percentile < 1;
 
   return {
     observed: Math.max(0, Math.round(observed)),
     byScenario,
+    predictive,
     percentileLow,
     percentileHigh,
     spread,

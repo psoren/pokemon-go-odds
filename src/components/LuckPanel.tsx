@@ -119,25 +119,11 @@ export function LuckLine({ luck, metric }: { luck: LuckRange; metric?: Metric })
       </span>
     );
   }
-  if (luck.tooUncertain) {
-    // Deliberately no point estimate: at this width it would be invented.
-    const useless = luck.percentileLow < 2 && luck.percentileHigh > 98;
-    return (
-      <span className="text-amber-700">
-        {useless ? (
-          <>the rate estimates can&rsquo;t place this at all</>
-        ) : (
-          <>
-            somewhere between the {ordinal(luck.percentileLow)} and{' '}
-            {ordinal(luck.percentileHigh)} percentile
-          </>
-        )}
-        <span className="ml-1 text-muted">— rates too uncertain to say more</span>
-      </span>
-    );
-  }
-  const below = luck.percentileHigh < 40;
-  const above = luck.percentileLow > 60;
+  // Lead with the predictive percentile — it folds the rate uncertainty in
+  // rather than conditioning on one scenario, so it is always meaningful.
+  const p = luck.predictive.percentile;
+  const below = p < 35;
+  const above = p > 65;
   const verdict =
     metric === 'hundo'
       ? below
@@ -152,8 +138,13 @@ export function LuckLine({ luck, metric }: { luck: LuckRange; metric?: Metric })
           : 'about par';
   return (
     <span className="text-muted">
-      {ordinal(luck.percentileLow)}–{ordinal(luck.percentileHigh)} percentile
-      <span className="ml-1.5 text-muted">{verdict}</span>
+      <span className="font-semibold text-ink">{ordinal(p)} percentile</span>
+      <span className="ml-1.5">{verdict}</span>
+      {luck.tooUncertain && (
+        <span className="ml-1.5 text-amber-700" title="Most of that width is rate uncertainty, not luck">
+          ± a lot
+        </span>
+      )}
     </span>
   );
 }
@@ -284,26 +275,27 @@ function LuckDetail({
       ) : (
         <>
           {luck.tooUncertain && (
-            <p className="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1.5 text-[11px] leading-relaxed text-amber-700">
-              The rate estimates alone move this percentile by{' '}
-              {Math.round(luck.spread)} points — more than the{' '}
-              {UNCERTAIN_SPREAD_POINTS}-point limit — so no point estimate is shown. The honest
-              answer is the range.
+            <p className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[11px] leading-relaxed text-amber-900">
+              That percentile already folds the rate uncertainty in, which is why it is usable
+              even though the rates are shaky. If instead you assume the mid rates are{' '}
+              <em>exactly</em> right, you land on the{' '}
+              <strong>{ordinal(luck.byScenario.mid.percentile)}</strong> — but at the low and
+              high ends of the rate bands that same count reads as the{' '}
+              {ordinal(luck.percentileLow)} and {ordinal(luck.percentileHigh)}. A{' '}
+              {Math.round(luck.spread)}-point swing from the rates alone, well past the{' '}
+              {UNCERTAIN_SPREAD_POINTS}-point limit, so treat the headline as “roughly ordinary”
+              rather than a precise rank.
             </p>
           )}
 
           <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] tabular-nums">
-            <div className="rounded-lg bg-panel2 px-2 py-1.5">
+            <div className="rounded-xl bg-panel2 px-2 py-1.5">
               <div className="text-muted">P(you have this many or fewer)</div>
-              <div className="mt-0.5 text-ink">
-                {fmtPercent(luck.byScenario.mid.pAtMost, 1)}
-              </div>
+              <div className="mt-0.5 text-ink">{fmtPercent(luck.predictive.pAtMost, 1)}</div>
             </div>
-            <div className="rounded-lg bg-panel2 px-2 py-1.5">
+            <div className="rounded-xl bg-panel2 px-2 py-1.5">
               <div className="text-muted">P(this many or more)</div>
-              <div className="mt-0.5 text-ink">
-                {fmtPercent(luck.byScenario.mid.pAtLeast, 1)}
-              </div>
+              <div className="mt-0.5 text-ink">{fmtPercent(luck.predictive.pAtLeast, 1)}</div>
             </div>
           </div>
         </>

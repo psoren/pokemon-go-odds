@@ -8,6 +8,7 @@ import {
   ordinal,
   poissonAt,
   poissonCdf,
+  predictiveLuck,
 } from './percentile';
 import { poissonPmf } from './math';
 import type { Trial } from './types';
@@ -279,5 +280,57 @@ describe('driver attribution', () => {
     const { driversFor } = await import('../components/LuckPanel');
     const { runAllScenarios, emptyInputs } = await import('./forward');
     expect(driversFor(runAllScenarios(emptyInputs()), 'shiny')).toEqual([]);
+  });
+});
+
+describe('predictiveLuck — integrating over rate uncertainty', () => {
+  it('places an observation sitting on the best guess near the middle', () => {
+    // Regression for the reported case: 499 observed, 234 / 501 / 1067
+    // predicted. The per-scenario approach called this unplaceable (0th to
+    // 100th); folding the rate uncertainty in correctly calls it ordinary.
+    const p = predictiveLuck(234, 501, 1067, 499);
+    expect(p.percentile).toBeGreaterThan(25);
+    expect(p.percentile).toBeLessThan(75);
+  });
+
+  it('is monotone in the observation', () => {
+    let prev = -1;
+    for (const obs of [0, 100, 300, 500, 800, 1200, 2000]) {
+      const p = predictiveLuck(234, 501, 1067, obs).percentile;
+      expect(p).toBeGreaterThanOrEqual(prev);
+      prev = p;
+    }
+  });
+
+  it('still flags an observation no plausible rate explains', () => {
+    expect(predictiveLuck(234, 501, 1067, 5).percentile).toBeLessThan(1);
+    expect(predictiveLuck(234, 501, 1067, 4000).percentile).toBeGreaterThan(99);
+  });
+
+  it('is wider than any single Poisson in the band', () => {
+    // The predictive spread must exceed the mid-only spread, since it carries
+    // the rate uncertainty on top of the counting noise.
+    const midOnly = (obs: number) => predictiveLuck(501, 501, 501, obs).percentile;
+    const full = (obs: number) => predictiveLuck(234, 501, 1067, obs).percentile;
+    // 400 is ~5 sigma low for Poisson(501) but unremarkable once rates vary.
+    expect(midOnly(400)).toBeLessThan(1);
+    expect(full(400)).toBeGreaterThan(10);
+  });
+
+  it('reduces to a plain Poisson when the band is degenerate', () => {
+    const p = predictiveLuck(100, 100, 100, 100);
+    const direct = assessLuck([{ n: 1_000_000, p: 100 / 1_000_000 }], 100);
+    expect(p.percentile).toBeCloseTo(direct.percentile, 0);
+  });
+
+  it('keeps P(<=) and P(>=) in range and consistent', () => {
+    for (const obs of [0, 1, 250, 499, 5000]) {
+      const p = predictiveLuck(234, 501, 1067, obs);
+      for (const v of [p.pAtMost, p.pAtLeast, p.percentile / 100]) {
+        expect(v).toBeGreaterThanOrEqual(0);
+        expect(v).toBeLessThanOrEqual(1);
+      }
+      expect(p.pAtMost + p.pAtLeast).toBeGreaterThanOrEqual(1 - 1e-9);
+    }
   });
 });
