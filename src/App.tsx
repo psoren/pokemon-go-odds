@@ -3,6 +3,7 @@ import { AssumptionsPanel } from './components/AssumptionsPanel';
 import { ContributionChart } from './components/ContributionChart';
 import { DistributionTables } from './components/DistributionTables';
 import { Headline } from './components/Headline';
+import { LuckPanel } from './components/LuckPanel';
 import { MedalForm } from './components/MedalForm';
 import { SensitivityView } from './components/SensitivityView';
 import { SourceTable } from './components/SourceTable';
@@ -39,7 +40,7 @@ export default function App() {
       </header>
 
       <div className="mb-6">
-        <Headline bundle={bundle} />
+        <Headline bundle={bundle} inputs={inputs} />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[24rem_minmax(0,1fr)]">
@@ -57,6 +58,8 @@ export default function App() {
           ) : (
             <ContributionChart model={mid} />
           )}
+
+          <LuckPanel bundle={bundle} inputs={inputs} setInputs={setInputs} />
 
           <AssumptionsPanel inputs={inputs} setInputs={setInputs} model={mid} />
 

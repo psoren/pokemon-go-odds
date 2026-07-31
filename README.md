@@ -154,6 +154,41 @@ medal text. If one is wrong for your account the app will tell you: subsets
 summing to more than their parent is a hard validation error. See
 [MODEL.md](MODEL.md) for how confident each containment is.
 
+## Reverse mode — how lucky have you been?
+
+Enter what you actually have and the app tells you where that lands in the
+predicted distribution: the percentile, plus `P(X ≤ observed)` and
+`P(X ≥ observed)`.
+
+This is **far** more sensitive to rate error than the forward model. A 20% error
+in the wild shiny rate barely moves "expected shinies" as a headline, but it can
+move a percentile from the 40th to the 90th. So it carries guardrails the
+forward model does not:
+
+1. **The percentile is always a range**, computed under the low and high rate
+   estimates. If those differ by more than **20 percentile points**, the point
+   estimate is suppressed entirely and the app says only "somewhere between Xth
+   and Yth — rates too uncertain to say more". With the default bands this fires
+   constantly, which is the honest outcome, not a defect.
+2. **A calibration warning** replaces the percentile whenever the observation
+   falls outside the 1st–99th percentile band under *every* scenario. At that
+   point the correct inference is almost always "a rate assumption is wrong",
+   not "you got lucky", and the app says so instead of reporting a percentile of
+   99.97.
+3. **An inverse-solve helper** backs out the λ at which your count would be the
+   exact median — the λ solving `P(X ≤ observed) = 0.5` — and converts it to the
+   blended shiny rate that would imply. Comparing that to the configured rate is
+   the real diagnostic: it tells you whether the model or your luck is the
+   outlier.
+
+Reverse mode is **strictly read-only**. It never writes back to your medal
+counts, never touches the rate config, and never auto-tunes anything.
+
+Percentiles use the **mid-P convention**, `P(X < obs) + ½·P(X = obs)`. Without
+the half-mass term a discrete distribution reports a systematically inflated
+percentile — at λ = 0.9, "0 shundos" would read as the 41st percentile when it
+is really the single most likely outcome.
+
 ## Rates and their sources
 
 All rates live in [`src/config/rates.ts`](src/config/rates.ts), fully separated

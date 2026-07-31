@@ -37,7 +37,7 @@ export const MAX_K = 6;
 const PURIFIER_ID = 'purifier';
 
 export function emptyInputs(): ModelInputs {
-  return { counts: {}, overrides: {}, assumptions: {} };
+  return { counts: {}, overrides: {}, assumptions: {}, observed: {} };
 }
 
 /** The IV floor in effect for a source, honouring any user override. */
@@ -254,7 +254,7 @@ export function computeSources(inputs: ModelInputs, scenario: Scenario): SourceR
  * share and the rest — because they are genuinely two different probabilities,
  * not one averaged one.
  */
-function trialsFor(
+export function trialsFor(
   results: SourceResult[],
   which: 'shiny' | 'hundo' | 'shundo',
 ): Trial[] {
@@ -293,15 +293,21 @@ export function runModel(inputs: ModelInputs, scenario: Scenario): ModelOutput {
   const sources = computeSources(inputs, scenario);
   const sum = (pick: (r: SourceResult) => number) =>
     sources.reduce((acc, r) => acc + pick(r), 0);
+  const trials = {
+    shiny: trialsFor(sources, 'shiny'),
+    hundo: trialsFor(sources, 'hundo'),
+    shundo: trialsFor(sources, 'shundo'),
+  };
 
   return {
     sources,
+    trials,
     lambdaShiny: sum((r) => r.lambdaShiny),
     lambdaHundo: sum((r) => r.lambdaHundo),
     lambdaShundo: sum((r) => r.lambdaShundo),
-    shiny: buildDistribution(trialsFor(sources, 'shiny'), MAX_K),
-    hundo: buildDistribution(trialsFor(sources, 'hundo'), MAX_K),
-    shundo: buildDistribution(trialsFor(sources, 'shundo'), MAX_K),
+    shiny: buildDistribution(trials.shiny, MAX_K),
+    hundo: buildDistribution(trials.hundo, MAX_K),
+    shundo: buildDistribution(trials.shundo, MAX_K),
     validation: validate(inputs, scenario),
     purifiedFraction: sources.find((r) => r.def.kind === 'shadow')?.purifiedFraction ?? 0,
   };

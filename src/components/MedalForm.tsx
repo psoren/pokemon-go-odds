@@ -76,8 +76,8 @@ export function MedalForm({ inputs, setInputs, issues }: Props) {
       <button
         type="button"
         onClick={() => {
-          if (confirm('Clear all medal counts, assumptions and rate overrides?')) {
-            setInputs(() => ({ counts: {}, overrides: {}, assumptions: {} }));
+          if (confirm('Clear everything — medals, assumptions, rate overrides and observed counts?')) {
+            setInputs(() => ({ counts: {}, overrides: {}, assumptions: {}, observed: {} }));
           }
         }}
         className="self-start rounded-lg border border-edge px-3 py-1.5 text-xs text-muted transition hover:border-rose-500/50 hover:text-rose-200"

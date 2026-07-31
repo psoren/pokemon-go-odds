@@ -2,11 +2,14 @@ import type { ReactNode } from 'react';
 import type { ScenarioBundle } from '../model/forward';
 import { fmtLambda, fmtRange } from '../lib/format';
 import { PerfectIV, ShundoMark, Sparkle } from './art';
+import { LuckLine, luckFor } from './LuckPanel';
+import type { Metric as ModelMetric, ModelInputs } from '../model/types';
 
 type Metric = 'lambdaShiny' | 'lambdaHundo' | 'lambdaShundo';
 
 const CARDS: {
   key: Metric;
+  metric: ModelMetric;
   label: string;
   blurb: string;
   accent: string;
@@ -15,6 +18,7 @@ const CARDS: {
 }[] = [
   {
     key: 'lambdaShiny',
+    metric: 'shiny',
     label: 'Shinies',
     blurb: 'Different colour, same stats',
     accent: 'text-shiny',
@@ -23,6 +27,7 @@ const CARDS: {
   },
   {
     key: 'lambdaHundo',
+    metric: 'hundo',
     label: 'Hundos',
     blurb: 'Perfect 15/15/15 stats',
     accent: 'text-hundo',
@@ -31,6 +36,7 @@ const CARDS: {
   },
   {
     key: 'lambdaShundo',
+    metric: 'shundo',
     label: 'Shundos',
     blurb: 'Shiny and perfect at once',
     accent: 'text-shundo',
@@ -43,13 +49,20 @@ const CARDS: {
  * The headline numbers. Range first, point estimate second — the rates feeding
  * this are community guesses and the display should not imply otherwise.
  */
-export function Headline({ bundle }: { bundle: ScenarioBundle }) {
+export function Headline({
+  bundle,
+  inputs,
+}: {
+  bundle: ScenarioBundle;
+  inputs: ModelInputs;
+}) {
   return (
     <div className="grid gap-3 sm:grid-cols-3">
       {CARDS.map((card) => {
         const lo = bundle.low[card.key];
         const mid = bundle.mid[card.key];
         const hi = bundle.high[card.key];
+        const luck = luckFor(bundle, inputs, card.metric);
         return (
           <div
             key={card.key}
@@ -84,7 +97,17 @@ export function Headline({ bundle }: { bundle: ScenarioBundle }) {
                 )}
               </div>
               <div className="mt-2 border-t border-edge/50 pt-2 text-[11px] text-muted">
-                {card.blurb}
+                {luck ? (
+                  <>
+                    <span className="text-slate-300">
+                      you have {luck.observed.toLocaleString()}
+                    </span>
+                    {' — '}
+                    <LuckLine luck={luck} />
+                  </>
+                ) : (
+                  card.blurb
+                )}
               </div>
             </div>
           </div>

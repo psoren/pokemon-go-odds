@@ -110,7 +110,15 @@ export interface ModelInputs {
   overrides: Record<string, RateOverride>;
   /** sourceId -> overridden derived fraction, for sources no medal tracks. */
   assumptions: Record<string, Partial<RateEstimate>>;
+  /**
+   * Reverse mode: what you ACTUALLY have. Strictly read-only against the
+   * forward model — nothing here feeds back into counts, rates or assumptions.
+   */
+  observed: Partial<Record<Metric, number>>;
 }
+
+/** The three things the model predicts. */
+export type Metric = 'shiny' | 'hundo' | 'shundo';
 
 export interface SourceResult {
   def: SourceDef;
@@ -169,6 +177,8 @@ export interface ModelOutput {
   validation: ValidationIssue[];
   /** Share of all shadows assumed purified (Purifier medal ÷ shadows caught). */
   purifiedFraction: number;
+  /** The per-Pokémon Bernoulli trials behind each distribution, for reverse mode. */
+  trials: Record<Metric, Trial[]>;
 }
 
 export interface ValidationIssue {
