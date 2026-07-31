@@ -50,17 +50,17 @@ export default function App() {
         </div>
 
         <div className="flex flex-col gap-6">
-          {!hasInput ? (
+          {!hasInput && (
             <Callout tone="info" title="Start with Collector">
               It is the big one — every Pokémon you have ever caught. The rest fill in from
               there. Because Collector already includes your raid, research and Rocket catches,
               the app subtracts those rather than adding them.
             </Callout>
-          ) : (
-            <ContributionChart model={mid} />
           )}
 
           <CommunityDayPicker inputs={inputs} setInputs={setInputs} model={mid} />
+
+          {hasInput && <ContributionChart model={mid} />}
 
           <LuckPanel bundle={bundle} inputs={inputs} />
 

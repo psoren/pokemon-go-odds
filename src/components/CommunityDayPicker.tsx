@@ -32,10 +32,13 @@ export function CommunityDayPicker({
   setInputs: (updater: (prev: ModelInputs) => ModelInputs) => void;
   model: ModelOutput;
 }) {
-  const [open, setOpen] = useState(false);
   const def = SOURCES_BY_ID['community-day'];
   const selected = new Set(inputs.communityDays ?? []);
   const attended = communityDayCount(inputs);
+  // Open on arrival while it is still empty. This is the biggest single lever on
+  // the shiny estimate, and hiding it behind a toggle meant people never found
+  // it — the model silently assumed they had played none.
+  const [open, setOpen] = useState(attended === 0);
   const catches = model.sources.find((r) => r.def.id === 'community-day')?.rawCount ?? 0;
 
   const setSelected = (next: Set<string>) =>
@@ -79,7 +82,7 @@ export function CommunityDayPicker({
           onClick={() => setOpen((v) => !v)}
           className="shrink-0 rounded-lg border border-edge px-2.5 py-1 text-[11px] text-muted transition hover:border-sky-400/50 hover:text-sky-200"
         >
-          {open ? 'hide ▲' : 'pick them ▼'}
+          {open ? 'hide ▲' : `pick them ▼`}
         </button>
       }
     >
@@ -90,10 +93,10 @@ export function CommunityDayPicker({
         events selected →{' '}
         <span className="text-shiny">{fmtInt(catches)} featured-species catches</span>.{' '}
         {attended === 0 && (
-          <>
-            Nothing selected yet, so the model currently assumes you have never played one.
-            Open this and tick them off.
-          </>
+          <span className="text-amber-200">
+            Nothing selected yet, so the model is assuming you have never played one — which
+            will understate your shinies. Tick them off below.
+          </span>
         )}
       </p>
 
