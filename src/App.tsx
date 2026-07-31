@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { AssumptionsPanel } from './components/AssumptionsPanel';
+import { CommunityDayPicker } from './components/CommunityDayPicker';
 import { ContributionChart } from './components/ContributionChart';
 import { DistributionTables } from './components/DistributionTables';
 import { Headline } from './components/Headline';
@@ -58,6 +59,8 @@ export default function App() {
           ) : (
             <ContributionChart model={mid} />
           )}
+
+          <CommunityDayPicker inputs={inputs} setInputs={setInputs} model={mid} />
 
           <LuckPanel bundle={bundle} inputs={inputs} />
 

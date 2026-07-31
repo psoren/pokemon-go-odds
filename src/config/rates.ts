@@ -146,17 +146,22 @@ export const SOURCES: SourceDef[] = [
     shinyRate: band(30, 25, 20),
     subsetOf: 'collector',
     medal: null,
-    medalNote: 'No medal tracks Community Day catches.',
-    derivedFrom: {
-      parentId: 'collector',
-      fraction: pct(1, 3, 6),
+    medalNote:
+      'No medal tracks Community Day catches — but the events themselves are a matter ' +
+      'of record, so tick the ones you played rather than guessing a percentage.',
+    derivedFromEvents: {
+      per: { low: 40, mid: 120, high: 250 },
       rationale:
-        'Share of your catches that were the featured species during a Community Day. ' +
-        'At 1-in-25 these punch far above their weight — worth getting roughly right.',
+        'Featured-species catches per Community Day you attended. Three hours with a ' +
+        'lure or incense puts a dedicated player in the low hundreds; a casual hour is ' +
+        'well under one hundred.',
     },
     confidence: 'high',
-    note: 'Featured species only, during the event window.',
-    citation: `~1/25 for the featured Pokémon during Community Days. ${BULBAPEDIA_SHINY} Fraction: ${NOT_SOURCED}`,
+    note:
+      'Featured species only, during the event window. At ~1-in-25 shiny these are the ' +
+      'richest ordinary source in the game, which is why the app asks which events you ' +
+      'actually played instead of assuming a share of your catches.',
+    citation: `~1/25 for the featured Pokémon during Community Days. ${BULBAPEDIA_SHINY} Event list from Bulbapedia and Nintendo Life (see src/config/communityDays.ts). Catches per event: ${NOT_SOURCED}`,
   },
   {
     id: 'event-wild',
@@ -532,8 +537,13 @@ export const SOURCES_BY_ID: Record<string, SourceDef> = Object.fromEntries(
 /** Sources the user types in directly, because a medal tracks them. */
 export const MEDAL_SOURCES = SOURCES.filter((s) => s.medal !== null);
 
-/** Sources whose count is assumed from a medal because nothing tracks them. */
-export const DERIVED_SOURCES = SOURCES.filter((s) => s.derivedFrom !== undefined);
+/** Sources whose count is assumed rather than read off a medal. */
+export const DERIVED_SOURCES = SOURCES.filter(
+  (s) => s.derivedFrom !== undefined || s.derivedFromEvents !== undefined,
+);
+
+/** Of those, the ones expressed as a share of a parent count. */
+export const FRACTION_SOURCES = SOURCES.filter((s) => s.derivedFrom !== undefined);
 
 /** Direct children of a source (sources whose counts are carved out of it). */
 export function childrenOf(parentId: string): SourceDef[] {

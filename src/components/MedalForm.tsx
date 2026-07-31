@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { CATEGORIES, MEDAL_SOURCES } from '../config/rates';
 import { TIERS, TIER_STYLE } from '../config/medals';
-import { effectiveFloor } from '../model/forward';
+import { effectiveFloor, emptyInputs } from '../model/forward';
 import type { ModelInputs, Scenario, SourceDef, ValidationIssue } from '../model/types';
 import { fmtInt, fmtOneIn, toDenominator } from '../lib/format';
 import { hundoProbability } from '../model/math';
@@ -77,7 +77,7 @@ export function MedalForm({ inputs, setInputs, issues }: Props) {
         type="button"
         onClick={() => {
           if (confirm('Clear everything — medals, assumptions, rate overrides and observed counts?')) {
-            setInputs(() => ({ counts: {}, overrides: {}, assumptions: {}, observed: {} }));
+            setInputs(() => emptyInputs());
           }
         }}
         className="self-start rounded-lg border border-edge px-3 py-1.5 text-xs text-muted transition hover:border-rose-500/50 hover:text-rose-200"

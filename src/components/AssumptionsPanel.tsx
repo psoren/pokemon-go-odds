@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { DERIVED_SOURCES, SOURCES_BY_ID } from '../config/rates';
+import { FRACTION_SOURCES, SOURCES_BY_ID } from '../config/rates';
 import { effectiveFraction } from '../model/forward';
 import type { ModelInputs, ModelOutput, Scenario } from '../model/types';
 import { fmtInt, fmtPercent } from '../lib/format';
@@ -60,7 +60,7 @@ export function AssumptionsPanel({
     >
       {!open ? (
         <p className="text-xs leading-relaxed text-muted">
-          {DERIVED_SOURCES.length} values are being assumed from your medals — including{' '}
+          {FRACTION_SOURCES.length} values are being assumed from your medals — including{' '}
           <span className="text-slate-300">
             {fmtInt(model.sources.find((r) => r.def.id === 'trades-shiny')?.rawCount ?? 0)} shiny
             trades
@@ -81,7 +81,7 @@ export function AssumptionsPanel({
             most of your expected shundos, and it is pure guesswork until you replace it.
           </Callout>
 
-          {DERIVED_SOURCES.map((def) => {
+          {FRACTION_SOURCES.map((def) => {
             const parent = SOURCES_BY_ID[def.derivedFrom!.parentId];
             const row = model.sources.find((r) => r.def.id === def.id);
             const parentRow = model.sources.find((r) => r.def.id === parent.id);

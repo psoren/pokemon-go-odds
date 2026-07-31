@@ -92,7 +92,6 @@ behind a collapsed **Assumptions** panel:
 | Derived | As a share of | Default |
 |---|---|---|
 | Weather-boosted catches | Collector | 30% |
-| Community Day featured species | Collector | 3% |
 | Other event-boosted catches | Collector | 8% |
 | Research encounters | Pokémon Ranger | 60% |
 | Shadow raids | Champion | 1% |
@@ -102,13 +101,32 @@ behind a collapsed **Assumptions** panel:
 | Lucky / Good / Great / Ultra trades | shiny trades | 15% / 2% / 3% / 5% |
 | Best Friend trades | shiny trades | the remainder |
 
+Community Day is **not** in that table any more — see below.
+
 **These defaults are rough guesses, not data.** No community dataset measures
 them. They exist so that entering medals alone produces a usable answer, they
 are all editable as percentages, and each carries a low/mid/high band that
 feeds the headline range — so an assumption you are unsure about *widens* the
 answer rather than quietly biasing it.
 
-One of them matters far more than the rest: **shiny trades**. Lucky trades
+### Community Days are picked, not guessed
+
+Community Day catches are ~1-in-25 shiny — twenty times the base rate — so they
+used to dominate the uncertainty all by themselves: a 1%-to-6% guess about their
+share of your catches swung the predicted shiny count by more than 250.
+
+But the events are a matter of record. So instead of a percentage, the app ships
+the full list of all **113 Community Days from January 2018 to June 2026** and
+you tick the ones you played. Only the catches-per-event rate is still an
+estimate (40 / 120 / 250), and there is an "others not listed" field for
+anything newer than the bundled list.
+
+Event list compiled from
+[Bulbapedia](https://bulbapedia.bulbagarden.net/wiki/Community_Day) (2018–2023)
+and Nintendo Life's Community Day history (2024–2026), in
+[`src/config/communityDays.ts`](src/config/communityDays.ts).
+
+One of the remaining assumptions matters far more than the rest: **shiny trades**. Lucky trades
 usually dominate expected shundos, and nothing in the game counts them. If you
 replace one number in that panel, replace that one.
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   DERIVED_SOURCES,
+  FRACTION_SOURCES,
   MEDAL_SOURCES,
   SOURCES,
   SOURCES_BY_ID,
@@ -8,6 +9,7 @@ import {
   depthOf,
 } from '../config/rates';
 import { MEDALS, TIERS } from '../config/medals';
+import { COMMUNITY_DAYS } from '../config/communityDays';
 import { computeSources, emptyInputs, resolveCounts, runModel, validate } from './forward';
 import { hundoProbability, purifiedHundoProbability } from './math';
 import type { ModelInputs } from './types';
@@ -105,7 +107,7 @@ describe('medals are the only typed inputs', () => {
   });
 
   it('derives every non-medal count from a source that exists', () => {
-    for (const s of DERIVED_SOURCES) {
+    for (const s of FRACTION_SOURCES) {
       const parent = SOURCES_BY_ID[s.derivedFrom!.parentId];
       expect(parent, `${s.id} -> ${s.derivedFrom!.parentId}`).toBeDefined();
       expect(s.derivedFrom!.rationale.length).toBeGreaterThan(20);
@@ -113,7 +115,7 @@ describe('medals are the only typed inputs', () => {
   });
 
   it('orders every derived fraction low <= mid <= high within [0, 1]', () => {
-    for (const s of DERIVED_SOURCES) {
+    for (const s of FRACTION_SOURCES) {
       const f = s.derivedFrom!.fraction;
       expect(f.low, s.id).toBeLessThanOrEqual(f.mid);
       expect(f.mid, s.id).toBeLessThanOrEqual(f.high);
@@ -123,9 +125,9 @@ describe('medals are the only typed inputs', () => {
   });
 
   it('keeps sibling derived fractions from over-subscribing their parent at mid', () => {
-    const parents = new Set(DERIVED_SOURCES.map((s) => s.derivedFrom!.parentId));
+    const parents = new Set(FRACTION_SOURCES.map((s) => s.derivedFrom!.parentId));
     for (const parentId of parents) {
-      const total = DERIVED_SOURCES.filter((s) => s.derivedFrom!.parentId === parentId).reduce(
+      const total = FRACTION_SOURCES.filter((s) => s.derivedFrom!.parentId === parentId).reduce(
         (a, s) => a + s.derivedFrom!.fraction.mid,
         0,
       );
@@ -168,7 +170,7 @@ describe('deriving counts from medals', () => {
         eggs: 2_400,
         gentleman: 1_400,
         purifier: 300,
-      }),
+      }, { communityDays: ['2024-01', '2024-02'] }),
       'mid',
     );
     expect(out.lambdaShiny).toBeGreaterThan(0);
@@ -188,8 +190,8 @@ describe('deriving counts from medals', () => {
   });
 
   it('applies the configured fraction exactly', () => {
-    const f = SOURCES_BY_ID['community-day'].derivedFrom!.fraction.mid;
-    expect(result({ collector: 100_000 }, 'community-day').rawCount).toBe(
+    const f = SOURCES_BY_ID['wild-weather'].derivedFrom!.fraction.mid;
+    expect(result({ collector: 100_000 }, 'wild-weather').rawCount).toBe(
       Math.round(100_000 * f),
     );
   });
@@ -227,8 +229,8 @@ describe('deriving counts from medals', () => {
     const counts = { collector: 100_000, gentleman: 5_000 };
     const lo = runModel(inputs(counts), 'low');
     const hi = runModel(inputs(counts), 'high');
-    const loCd = lo.sources.find((r) => r.def.id === 'community-day')!.rawCount;
-    const hiCd = hi.sources.find((r) => r.def.id === 'community-day')!.rawCount;
+    const loCd = lo.sources.find((r) => r.def.id === 'wild-weather')!.rawCount;
+    const hiCd = hi.sources.find((r) => r.def.id === 'wild-weather')!.rawCount;
     expect(hiCd).toBeGreaterThan(loCd);
     expect(hi.lambdaShiny).toBeGreaterThan(lo.lambdaShiny);
     expect(hi.lambdaShundo).toBeGreaterThan(lo.lambdaShundo);
@@ -273,6 +275,68 @@ describe('research encounters are derived, not equal to tasks completed', () => 
     expect(result(counts, 'collector').effectiveCount).toBeLessThan(50_000);
     expect(encounters).toBeGreaterThan(0);
     expect(encounters).toBeLessThan(5_000);
+  });
+});
+
+describe('Community Days are counted, not guessed at', () => {
+  it('derives catches from events attended times a per-event rate', () => {
+    const per = SOURCES_BY_ID['community-day'].derivedFromEvents!.per.mid;
+    const r = result({ collector: 95_000 }, 'community-day', {
+      communityDays: ['2024-01', '2024-02', '2024-03'],
+    });
+    expect(r.rawCount).toBe(Math.round(3 * per));
+  });
+
+  it('counts zero when nothing is ticked', () => {
+    expect(result({ collector: 95_000 }, 'community-day').rawCount).toBe(0);
+  });
+
+  it('adds events that are not in the bundled list', () => {
+    const per = SOURCES_BY_ID['community-day'].derivedFromEvents!.per.mid;
+    const r = result({ collector: 95_000 }, 'community-day', {
+      communityDays: ['2024-01'],
+      extraCommunityDays: 4,
+    });
+    expect(r.rawCount).toBe(Math.round(5 * per));
+  });
+
+  it('honours a per-event override', () => {
+    const r = result({ collector: 95_000 }, 'community-day', {
+      communityDays: ['2024-01', '2024-02'],
+      assumptions: { 'community-day': { mid: 100 } },
+    });
+    expect(r.rawCount).toBe(200);
+  });
+
+  it('is still carved out of Collector', () => {
+    const counts = { collector: 10_000 };
+    const withCd = result(counts, 'collector', { communityDays: ['2024-01'] });
+    const without = result(counts, 'collector');
+    expect(withCd.effectiveCount).toBeLessThan(without.effectiveCount);
+  });
+
+  it('has a unique id for every event in the bundled list', () => {
+    const ids = COMMUNITY_DAYS.map((e) => e.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('covers every year from 2018 to 2026 with plausible counts', () => {
+    for (let y = 2018; y <= 2026; y++) {
+      const n = COMMUNITY_DAYS.filter((e) => e.year === y).length;
+      expect(n, `${y}`).toBeGreaterThan(5);
+      expect(n, `${y}`).toBeLessThan(20);
+    }
+  });
+
+  it('no longer treats Community Day as a share of Collector', () => {
+    // Regression: the old model guessed 1-6% of every catch, which alone moved
+    // the shiny prediction by more than 250.
+    expect(SOURCES_BY_ID['community-day'].derivedFrom).toBeUndefined();
+    expect(SOURCES_BY_ID['community-day'].derivedFromEvents).toBeDefined();
+    const big = result({ collector: 500_000 }, 'community-day');
+    const small = result({ collector: 1_000 }, 'community-day');
+    // Catch total no longer influences it at all.
+    expect(big.rawCount).toBe(small.rawCount);
   });
 });
 

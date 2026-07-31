@@ -52,6 +52,17 @@ export type Scenario = 'low' | 'mid' | 'high';
  * a usable answer, they are all editable, and their low/high spread feeds the
  * headline range so the uncertainty they add is visible rather than hidden.
  */
+/**
+ * A count derived from a number of EVENTS the user ticked off, rather than as a
+ * share of another count. Community Day is the case: the number of events is a
+ * hard fact, so only the catches-per-event rate is an estimate.
+ */
+export interface DerivedFromEvents {
+  /** Expected catches per event attended, per scenario. */
+  per: RateEstimate;
+  rationale: string;
+}
+
 export interface DerivedFrom {
   /** Source id whose resolved count this is a fraction of. */
   parentId: string;
@@ -83,6 +94,8 @@ export interface SourceDef {
    * `medal`: a source is either read off a medal or assumed from one.
    */
   derivedFrom?: DerivedFrom;
+  /** Alternative to `derivedFrom`: count = (events ticked) × per-event rate. */
+  derivedFromEvents?: DerivedFromEvents;
   /**
    * If set, this source's count is a SUBSET of the referenced source's count
    * and is subtracted from it so catches are not double counted.
@@ -115,6 +128,10 @@ export interface ModelInputs {
    * forward model — nothing here feeds back into counts, rates or assumptions.
    */
   observed: Partial<Record<Metric, number>>;
+  /** Ids of the Community Days the user says they played. */
+  communityDays: string[];
+  /** Community Days played that are not in the bundled list (newer ones). */
+  extraCommunityDays: number;
 }
 
 /** The three things the model predicts. */

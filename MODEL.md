@@ -270,7 +270,7 @@ medal-backed parent:
 | Derived | Share of | low / mid / high |
 |---|---|---|
 | Weather-boosted catches | Collector | 20 / 30 / 45 % |
-| Community Day featured species | Collector | 1 / 3 / 6 % |
+
 | Other event-boosted catches | Collector | 3 / 8 / 15 % |
 | Shadow raids | Champion | 0 / 1 / 4 % |
 | Rocket Leaders | Hero | 5 / 12 / 20 % |
@@ -280,6 +280,16 @@ medal-backed parent:
 | Lucky trades | shiny trades | 5 / 15 / 35 % |
 | Good / Great / Ultra trades | shiny trades | 0-8 / 0-10 / 0-15 % |
 | Best Friend trades | shiny trades | the remainder |
+
+**Community Day is deliberately absent from that table.** It used to be there,
+at 1/3/6% of Collector, and it was the single largest contributor to the shiny
+uncertainty — worth more than 250 expected shinies on a 95,000-catch account,
+because a ~1-in-25 source multiplied by a 6x guess about its share compounds
+badly. Since the events themselves are a matter of record, the app now ships all
+113 of them and asks which you played. The number of events became a fact; only
+the catches-per-event rate (40 / 120 / 250) is still an estimate. This is the
+general lesson: when an assumption dominates, look for whether part of it is
+actually knowable.
 
 **These fractions are not sourced and not measured.** No medal, no datamine and
 no community study tells you what share of your catches happened in boosted

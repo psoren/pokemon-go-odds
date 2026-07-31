@@ -37,7 +37,35 @@ export const MAX_K = 6;
 const PURIFIER_ID = 'purifier';
 
 export function emptyInputs(): ModelInputs {
-  return { counts: {}, overrides: {}, assumptions: {}, observed: {} };
+  return {
+    counts: {},
+    overrides: {},
+    assumptions: {},
+    observed: {},
+    communityDays: [],
+    extraCommunityDays: 0,
+  };
+}
+
+/** How many Community Days the user says they played, list plus manual extras. */
+export function communityDayCount(inputs: ModelInputs): number {
+  const ticked = inputs.communityDays?.length ?? 0;
+  const extra = Number.isFinite(inputs.extraCommunityDays)
+    ? Math.max(0, Math.round(inputs.extraCommunityDays ?? 0))
+    : 0;
+  return ticked + extra;
+}
+
+/** Catches per attended event, honouring any user override. */
+export function effectivePerEvent(
+  def: SourceDef,
+  inputs: ModelInputs,
+  scenario: Scenario,
+): number {
+  if (!def.derivedFromEvents) return 0;
+  const override = inputs.assumptions[def.id]?.[scenario];
+  if (override !== undefined && Number.isFinite(override) && override >= 0) return override;
+  return def.derivedFromEvents.per[scenario];
 }
 
 /** The IV floor in effect for a source, honouring any user override. */
@@ -84,7 +112,12 @@ function typedCount(id: string, inputs: ModelInputs): number {
  * Friend trades, which soak up every shiny trade not assigned elsewhere.
  */
 function isRemainder(def: SourceDef): boolean {
-  return def.subsetOf !== undefined && def.medal === null && def.derivedFrom === undefined;
+  return (
+    def.subsetOf !== undefined &&
+    def.medal === null &&
+    def.derivedFrom === undefined &&
+    def.derivedFromEvents === undefined
+  );
 }
 
 /**
@@ -102,7 +135,11 @@ export function resolveCounts(
   const byDepth = [...SOURCES].sort((a, b) => depthOf(a.id) - depthOf(b.id));
 
   for (const def of byDepth) {
-    if (def.derivedFrom) {
+    if (def.derivedFromEvents) {
+      resolved[def.id] = Math.round(
+        communityDayCount(inputs) * effectivePerEvent(def, inputs, scenario),
+      );
+    } else if (def.derivedFrom) {
       const parent = resolved[def.derivedFrom.parentId] ?? 0;
       resolved[def.id] = Math.round(parent * effectiveFraction(def, inputs, scenario));
     } else if (isRemainder(def)) {
