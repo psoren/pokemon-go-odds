@@ -40,10 +40,21 @@ export function toDenominator(p: number): string {
   return n >= 100 ? String(Math.round(n)) : String(Number(n.toFixed(2)));
 }
 
+/**
+ * A probability as a percentage, with a "smaller than we can show" form so a
+ * tiny-but-nonzero contribution never renders as a flat 0%.
+ *
+ * `digits` is clamped to [0, 20]: it feeds both toFixed (which throws outside
+ * that range) and a repeat() count that used to go negative at digits = 0.
+ */
 export function fmtPercent(p: number, digits = 2): string {
   if (!Number.isFinite(p)) return '—';
-  if (p > 0 && p < 10 ** -digits / 100) return `<0.${'0'.repeat(digits - 1)}1%`;
-  return `${(p * 100).toFixed(digits)}%`;
+  const d = Math.min(20, Math.max(0, Math.trunc(digits)));
+  const smallest = 10 ** -d / 100;
+  if (p > 0 && p < smallest) {
+    return d === 0 ? '<1%' : `<0.${'0'.repeat(d - 1)}1%`;
+  }
+  return `${(p * 100).toFixed(d)}%`;
 }
 
 export function fmtInt(n: number): string {

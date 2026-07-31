@@ -6,6 +6,7 @@ import type { ModelInputs, Scenario, SourceDef, ValidationIssue } from '../model
 import { fmtInt, fmtOneIn, toDenominator } from '../lib/format';
 import { hundoProbability } from '../model/math';
 import { Callout, ConfidenceBadge, NumberField, Panel } from './ui';
+import { CategoryIcon } from './art';
 
 interface Props {
   inputs: ModelInputs;
@@ -37,11 +38,9 @@ export function MedalForm({ inputs, setInputs, issues }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
-      <Callout tone="info" title="Copy these straight off your Medals screen">
-        Open Pokémon GO → tap your trainer avatar → scroll to <strong>Medals</strong>. Each
-        medal shows your exact progress (“47,312 / 50,000”) — type that number. Nothing else is
-        required: everything the model needs that no medal tracks is estimated from these and
-        can be adjusted under <strong>Assumptions</strong>.
+      <Callout tone="info" title="Where to find these">
+        In-game → tap your avatar → <strong>Medals</strong>. Each one shows your exact progress
+        (“47,312 / 50,000”) — type that number.
       </Callout>
 
       {issues.map((issue) => (
@@ -54,7 +53,11 @@ export function MedalForm({ inputs, setInputs, issues }: Props) {
         const rows = MEDAL_SOURCES.filter((s) => s.category === category);
         if (rows.length === 0) return null;
         return (
-          <Panel key={category} title={category}>
+          <Panel
+            key={category}
+            title={category}
+            icon={<CategoryIcon category={category} className="h-5 w-5" />}
+          >
             <div className="flex flex-col divide-y divide-edge/40">
               {rows.map((def) => (
                 <MedalRow
@@ -104,27 +107,12 @@ function MedalRow({
 
   return (
     <div className="py-3">
-      <div className="flex items-start gap-3">
+      <div className="flex items-center gap-3">
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="rounded border border-sky-400/40 bg-sky-400/10 px-1.5 py-0.5 text-[10px] font-semibold text-sky-200">
-              {medal.name}
-            </span>
-            {def.subsetOf && (
-              <span className="text-[10px] text-muted" title="Carved out of a larger medal">
-                subset
-              </span>
-            )}
+          <div className="text-sm font-medium leading-snug text-slate-100">{medal.name}</div>
+          <div className="mt-0.5 text-[11px] leading-snug text-muted">
+            {medal.description.replace('___', 'N')}
           </div>
-          <div className="mt-1 text-sm leading-snug text-slate-200">{def.label}</div>
-          <div className="mt-0.5 text-[11px] text-muted">
-            “{medal.description.replace('___', 'N')}” · platinum {fmtInt(medal.platinum)}
-          </div>
-          {def.kind !== 'reference' && (
-            <div className="mt-0.5 text-[11px] text-muted">
-              floor {floor} · hundo {fmtOneIn(hundoProbability(floor))}
-            </div>
-          )}
         </div>
 
         <NumberField
@@ -156,7 +144,17 @@ function MedalRow({
             <span className="text-[11px] text-muted">{def.kind} source</span>
           </div>
 
-          <p className="text-[11px] text-muted">
+          <p className="text-[11px] leading-relaxed text-muted">
+            <span className="text-slate-300">{def.label}</span>
+            {def.kind !== 'reference' && (
+              <>
+                {' '}
+                · IV floor {floor} · hundo {fmtOneIn(hundoProbability(floor))}
+              </>
+            )}
+            {def.subsetOf && <> · carved out of a larger medal</>}
+          </p>
+          <p className="mt-2 text-[11px] text-muted">
             Tap a tier to fill in that threshold, or type your exact medal progress.
           </p>
           <div className="mt-1.5 flex flex-wrap gap-1.5">

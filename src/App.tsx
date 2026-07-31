@@ -6,7 +6,8 @@ import { Headline } from './components/Headline';
 import { MedalForm } from './components/MedalForm';
 import { SensitivityView } from './components/SensitivityView';
 import { SourceTable } from './components/SourceTable';
-import { Callout } from './components/ui';
+import { Callout, Disclosure } from './components/ui';
+import { HeaderArt, Pokeball } from './components/art';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { emptyInputs, runAllScenarios } from './model/forward';
 import type { ModelInputs } from './model/types';
@@ -22,16 +23,18 @@ export default function App() {
   const hasInput = Object.values(inputs.counts).some((n) => n > 0);
 
   return (
-    <div className="mx-auto max-w-[110rem] px-4 py-8 sm:px-6 lg:px-8">
-      <header className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-50 sm:text-3xl">
-          Pokémon GO rarity calculator
-        </h1>
-        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted">
-          Type in your medals. See how many shinies, hundos and shundos you should have — as a
-          full probability distribution, not a single number. Every encounter source is an
-          independent binomial trial with its own shiny rate and IV floor. Nothing leaves your
-          browser; inputs are saved to localStorage.
+    <div className="mx-auto max-w-[100rem] px-4 py-8 sm:px-6 lg:px-8">
+      <header className="relative mb-6 overflow-hidden">
+        <HeaderArt />
+        <div className="relative flex items-center gap-3">
+          <Pokeball className="h-9 w-9 shrink-0" top="#f6c453" bottom="#e8edf9" />
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-50 sm:text-3xl">
+            Pokémon GO rarity calculator
+          </h1>
+        </div>
+        <p className="relative mt-2 max-w-2xl text-sm leading-relaxed text-muted">
+          Type in your medals. See how many shinies, hundos and shundos you should have by now.
+          Nothing leaves your browser.
         </p>
       </header>
 
@@ -39,36 +42,40 @@ export default function App() {
         <Headline bundle={bundle} />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[26rem_minmax(0,1fr)]">
+      <div className="grid gap-6 xl:grid-cols-[24rem_minmax(0,1fr)]">
         <div className="flex flex-col gap-4">
           <MedalForm inputs={inputs} setInputs={setInputs} issues={mid.validation} />
         </div>
 
         <div className="flex flex-col gap-6">
-          {!hasInput && (
-            <Callout tone="info" title="Nine numbers and you are done">
-              Start with <strong>Collector</strong> — every Pokémon you have ever caught. Then
-              Champion and Battle Legend for raids, Hero and Ultra Hero for Team GO Rocket,
-              Breeder for eggs, Pokémon Ranger for research, Gentleman for trades and Purifier
-              for shadows. Because Collector already contains your raid, research and Rocket
-              catches, the app subtracts those from it rather than adding them.
+          {!hasInput ? (
+            <Callout tone="info" title="Start with Collector">
+              It is the big one — every Pokémon you have ever caught. The rest fill in from
+              there. Because Collector already includes your raid, research and Rocket catches,
+              the app subtracts those rather than adding them.
             </Callout>
+          ) : (
+            <ContributionChart model={mid} />
           )}
 
           <AssumptionsPanel inputs={inputs} setInputs={setInputs} model={mid} />
-          <ContributionChart model={mid} />
-          <DistributionTables model={mid} />
-          <SensitivityView bundle={bundle} />
-          <SourceTable model={mid} />
 
-          <Callout tone="info" title="What this model does and doesn't know">
-            Shiny and IV rolls are treated as independent, every encounter as an independent
-            trial, and each source's rate as constant over your whole account history — none of
-            which is exactly true. Champion, Hero and Pokémon Ranger count battles won and tasks
-            completed rather than Pokémon caught, so they run high. And your Collector total
-            includes species that were shiny-locked at the time, which biases expected shinies
-            up further. See <code className="text-slate-300">MODEL.md</code> in the repo for the
-            full list.
+          <Disclosure
+            label="Full breakdown"
+            hint="Probability of exactly k, sensitivity to the rate estimates, and λ per source"
+          >
+            <DistributionTables model={mid} />
+            <SensitivityView bundle={bundle} />
+            <SourceTable model={mid} />
+          </Disclosure>
+
+          <Callout tone="info" title="Treat these as a ballpark, not a scoreboard">
+            Niantic has never published shiny rates, so the model runs on community estimates.
+            Three things push it high in particular: your Collector total includes species that
+            were shiny-locked at the time, and the Champion, Hero and Pokémon Ranger medals count
+            battles won and tasks completed rather than Pokémon caught. The full reasoning — and
+            everywhere the model is knowingly approximate — is in{' '}
+            <code className="text-slate-300">MODEL.md</code>.
           </Callout>
         </div>
       </div>
@@ -76,8 +83,7 @@ export default function App() {
       <footer className="mt-10 border-t border-edge/60 pt-4 text-[11px] leading-relaxed text-muted">
         Medal names, descriptions and thresholds are in-game text. IV floors are datamined game
         mechanics and are exact. Shiny rates are community estimates aggregated by Bulbapedia
-        from The Silph Road's crowd-sourced research — Niantic has never published them — and
-        every one is editable at runtime.
+        from The Silph Road's research, and every one is editable at runtime.
         {mid.purifiedFraction > 0 && (
           <>
             {' '}

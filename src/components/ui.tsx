@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { Confidence } from '../model/types';
 
 export function Panel({
@@ -6,25 +6,67 @@ export function Panel({
   subtitle,
   children,
   right,
+  icon,
 }: {
   title?: string;
   subtitle?: ReactNode;
   children: ReactNode;
   right?: ReactNode;
+  icon?: ReactNode;
 }) {
   return (
     <section className="rounded-2xl border border-edge/70 bg-panel/70 backdrop-blur-sm shadow-lg shadow-black/20">
       {title && (
         <header className="flex items-start justify-between gap-4 border-b border-edge/60 px-5 py-4">
-          <div>
-            <h2 className="text-base font-semibold tracking-tight text-slate-100">{title}</h2>
-            {subtitle && <p className="mt-1 text-xs leading-relaxed text-muted">{subtitle}</p>}
+          <div className="flex items-start gap-2.5">
+            {icon && <span className="mt-0.5 shrink-0">{icon}</span>}
+            <div>
+              <h2 className="text-base font-semibold tracking-tight text-slate-100">{title}</h2>
+              {subtitle && <p className="mt-1 text-xs leading-relaxed text-muted">{subtitle}</p>}
+            </div>
           </div>
           {right}
         </header>
       )}
       <div className="px-5 py-4">{children}</div>
     </section>
+  );
+}
+
+/**
+ * A disclosure for the rigorous-but-dense panels. The app's default view stays
+ * readable; the full probability machinery is one click away rather than gone.
+ */
+export function Disclosure({
+  label,
+  hint,
+  children,
+  defaultOpen = false,
+}: {
+  label: string;
+  hint?: string;
+  children: ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="flex flex-col gap-6">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="group flex items-center justify-between gap-3 rounded-2xl border border-edge/70 bg-panel/50 px-5 py-3.5 text-left transition hover:border-sky-400/50 hover:bg-panel/80"
+      >
+        <span>
+          <span className="text-sm font-medium text-slate-200">{label}</span>
+          {hint && <span className="mt-0.5 block text-xs text-muted">{hint}</span>}
+        </span>
+        <span className="shrink-0 text-xs text-muted transition group-hover:text-sky-200">
+          {open ? 'hide ▲' : 'show ▼'}
+        </span>
+      </button>
+      {open && children}
+    </div>
   );
 }
 
@@ -98,7 +140,11 @@ export function NumberField({
         const raw = e.target.value.trim();
         if (raw === '') return onChange(undefined);
         const n = Number(raw);
-        onChange(Number.isFinite(n) ? n : undefined);
+        if (!Number.isFinite(n)) return onChange(undefined);
+        // Every field here is a count, a percentage or a rate denominator, so a
+        // negative is always nonsense. The model clamps too, but without this
+        // the input would sit there displaying "-5".
+        onChange(Math.max(0, n));
       }}
       className={`rounded-lg border border-edge bg-ink/70 px-3 py-1.5 text-right text-sm tabular-nums text-slate-100 outline-none transition focus:border-sky-400/70 focus:ring-2 focus:ring-sky-400/20 ${className}`}
     />
