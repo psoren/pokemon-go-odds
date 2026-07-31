@@ -34,12 +34,22 @@
  *   Collector "Catch ___ Pokémon"                        [MEDAL]
  *   ├── weather-boosted / Community Day / other events   [derived]
  *   ├── Champion "Win ___ raids"                         [MEDAL]
- *   │   ├── Battle Legend "Win ___ Legendary raids"      [MEDAL]
  *   │   └── Shadow raids                                 [derived]
+ *   ├── Battle Legend "Win ___ Legendary raids"          [MEDAL]
+ *   ├── Ultra Hero "Defeat Giovanni ___ time(s)"         [MEDAL]
  *   ├── Pokémon Ranger "Complete ___ Field Research tasks"  [MEDAL]
  *   └── Hero "Defeat ___ Team GO Rocket members"         [MEDAL]
- *       ├── Leaders / weather-boosted grunts             [derived]
- *       └── Ultra Hero "Defeat Giovanni ___ time(s)"     [MEDAL]
+ *       └── Leaders / weather-boosted grunts             [derived]
+ *
+ * INDEPENDENT COUNTERS — Battle Legend is NOT inside Champion, and Ultra Hero
+ * is NOT inside Hero. Both were originally modelled as nested, on the reading
+ * that "Win ___ raids" is unqualified. Real account data disproved it: a player
+ * with Champion 530 and Battle Legend 664 is impossible if Champion contained
+ * the Legendary wins. Niantic Support acknowledged Legendary raids not counting
+ * toward Champion back in 2017 (x.com/NianticHelp/status/896014879294881794),
+ * and the identical 2,000 platinum thresholds only make sense for independent
+ * counters. They are therefore siblings under Collector, and both are entered
+ * exactly as the game shows them.
  *
  *   Breeder "Hatch ___ Eggs"                             [MEDAL, own root]
  *   Gentleman "Trade ___ Pokémon"                        [MEDAL, own root]
@@ -189,7 +199,7 @@ export const SOURCES: SourceDef[] = [
   // ================================================================= Raids ==
   {
     id: 'raid-champion',
-    label: 'Raids won — all tiers',
+    label: 'Raids won (non-Legendary)',
     category: 'Raids',
     kind: 'catch',
     ivFloor: 10,
@@ -198,9 +208,10 @@ export const SOURCES: SourceDef[] = [
     medal: MEDALS.champion,
     confidence: 'high',
     note:
-      'Counts raids of every tier. Legendary and shadow raids are subtracted; what is ' +
-      'left is treated as tier 1–4. The medal counts raids WON, not bosses caught — ' +
-      'if you have fled bosses your true catch count is a little lower.',
+      'Treated as tier 1–4 raids. Legendary raids are counted separately by Battle ' +
+      'Legend and are NOT subtracted from this — the two medals are independent ' +
+      'counters. The medal counts raids WON, not bosses caught, so if you have fled ' +
+      'bosses your true catch count is a little lower.',
     citation: `1/64 for non-5-star raids; floor 10/10/10. ${BULBAPEDIA_SHINY} / ${DITTOBASE_FLOORS}`,
   },
   {
@@ -210,13 +221,15 @@ export const SOURCES: SourceDef[] = [
     kind: 'catch',
     ivFloor: 10,
     shinyRate: band(25, 20, 15),
-    subsetOf: 'raid-champion',
+    // NOT a subset of Champion — see INDEPENDENT COUNTERS in the header comment.
+    subsetOf: 'collector',
     medal: MEDALS.battleLegend,
     confidence: 'high',
     note:
       'Legendary, Mythical and Ultra Beast 5-star raids — the richest shiny source ' +
-      'per encounter in the game.',
-    citation: `1/20 for 5-star raids; floor 10/10/10. ${BULBAPEDIA_SHINY} / ${DITTOBASE_FLOORS}`,
+      'per encounter in the game. Counted independently of Champion, not carved out ' +
+      'of it, so enter both medals exactly as the game shows them.',
+    citation: `1/20 for 5-star raids; floor 10/10/10. ${BULBAPEDIA_SHINY} / ${DITTOBASE_FLOORS} Independence of Champion and Battle Legend: Niantic Support confirmed Legendary raids were not counting toward Champion (https://x.com/NianticHelp/status/896014879294881794), and real accounts show Battle Legend exceeding Champion, which is impossible if Champion contained it.`,
   },
   {
     id: 'shadow-raid',
@@ -266,13 +279,14 @@ export const SOURCES: SourceDef[] = [
     kind: 'shadow',
     ivFloor: 6,
     shinyRate: band(128, 64, 20),
-    subsetOf: 'rocket-hero',
+    // NOT a subset of Hero — Giovanni feeds Ultra Hero, the same independent-counter
+    // pattern as Champion/Battle Legend. At these counts it barely moves the answer.
+    subsetOf: 'collector',
     medal: MEDALS.ultraHero,
     confidence: 'medium',
     note:
-      'Giovanni uses the raised 6/6/6 shadow floor, same as shadow raids. Whether ' +
-      'Giovanni also counts toward the Hero medal is not firmly established — but at ' +
-      'these counts it barely moves the answer.',
+      'Giovanni uses the raised 6/6/6 shadow floor, same as shadow raids. Counted ' +
+      'independently of the Hero medal, so enter both exactly as the game shows them.',
     citation: `1/64 for Giovanni (${BULBAPEDIA_SHINY}); floor 6/6/6 (${DITTOBASE_FLOORS}).`,
   },
   {

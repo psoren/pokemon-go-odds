@@ -62,7 +62,7 @@ entire required input.
 |---|---|---|---|
 | Pokémon caught — all time | **Collector** | “Catch ___ Pokémon” | 50,000 |
 | Field Research tasks completed | **Pokémon Ranger** | “Complete ___ Field Research tasks” | 2,500 |
-| Raids won — all tiers | **Champion** | “Win ___ raids” | 2,000 |
+| Raids won (non-Legendary) | **Champion** | “Win ___ raids” | 2,000 |
 | Legendary raids won | **Battle Legend** | “Win ___ Legendary raids” | 2,000 |
 | Team GO Rocket members defeated | **Hero** | “Defeat ___ Team GO Rocket members” | 2,000 |
 | Giovanni defeated | **Ultra Hero** | “Defeat Giovanni ___ time(s)” | 50 |
@@ -122,11 +122,11 @@ So the inputs form a tree, and every child is subtracted from its parent:
 Collector  "Catch ___ Pokémon"                          [medal]
 ├── weather-boosted / Community Day / other events      [derived]
 ├── Champion  "Win ___ raids"                           [medal]
-│   ├── Battle Legend  "Win ___ Legendary raids"        [medal]
 │   └── Shadow raids                                    [derived]
+├── Battle Legend  "Win ___ Legendary raids"            [medal]
+├── Ultra Hero  "Defeat Giovanni ___ time(s)"           [medal]
 ├── Pokémon Ranger  "Complete ___ Field Research tasks" [medal]
 └── Hero  "Defeat ___ Team GO Rocket members"           [medal]
-    ├── Ultra Hero  "Defeat Giovanni ___ time(s)"       [medal]
     └── Leaders / weather-boosted grunts                [derived]
 
 Breeder  "Hatch ___ Eggs"          (hatching is not catching — its own root)
@@ -134,6 +134,15 @@ Gentleman  "Trade ___ Pokémon"     (re-rolls, not new Pokémon — its own root
 └── shiny trades → lucky / good / great / ultra, remainder to Best Friend
 Purifier  "Purify ___ Shadow Pokémon"   (a parameter, not a source)
 ```
+
+**Some medals that look nested are not.** Battle Legend is *not* inside
+Champion, and Ultra Hero is *not* inside Hero — they are independent counters.
+This app originally assumed otherwise, on the reading that "Win ___ raids" is
+unqualified, and it was wrong: a real account with Champion 530 and Battle
+Legend 664 is arithmetically impossible under that assumption. Niantic Support
+[acknowledged Legendary raids not counting toward Champion](https://x.com/NianticHelp/status/896014879294881794)
+back in 2017, and the identical 2,000 platinum thresholds only make sense for
+separate counters. Enter both medals exactly as the game shows them.
 
 What is left over after subtraction is the remainder: plain unboosted wild
 catches, tier 1–4 raids, ordinary grunts. The λ table shows both numbers — e.g.
@@ -163,13 +172,13 @@ Bulbapedia. IV floors, by contrast, are datamined and exact.
 | …Community Day | 1/30 · **1/25** · 1/20 | 0 | high | Bulbapedia: ~1/25 for the featured species |
 | …other event-boosted | 1/256 · **1/128** · 1/64 | 0 | low | Documented event tiers span 1/256 → 1/10; varies enormously by event |
 | …research encounters | 1/512 · **1/64** · 1/32 | 10 | low | ~1/64 for field research; event research runs much hotter |
-| Raids won (remainder = tier 1–4) | 1/128 · **1/64** · 1/32 | 10 | high | Bulbapedia: 1/64 for non-5-star raids |
-| …Legendary (tier 5) | 1/25 · **1/20** · 1/15 | 10 | high | Bulbapedia: 1/20 for 5-star raids |
+| Raids won, non-Legendary (tier 1–4) | 1/128 · **1/64** · 1/32 | 10 | high | Bulbapedia: 1/64 for non-5-star raids |
+| Legendary raids (tier 5, counted separately) | 1/25 · **1/20** · 1/15 | 10 | high | Bulbapedia: 1/20 for 5-star raids |
 | …Shadow raids | 1/64 · **1/20** · 1/10 | 6 | low | Floor 6 confirmed; **shiny rate extrapolated, not verified** |
 | Rocket defeated (remainder = grunts) | 1/512 · **1/256** · 1/128 | 0 | medium | Bulbapedia: 1/256 for grunts |
 | …weather-boosted grunts | 1/512 · **1/256** · 1/128 | 4 | medium | Weather-boosted shadow floor is 4 |
 | …Leaders (Arlo / Cliff / Sierra) | 1/128 · **1/64** · 1/32 | 0 | medium | Bulbapedia: 1/64 for Rocket Leaders |
-| …Giovanni | 1/128 · **1/64** · 1/20 | 6 | medium | Bulbapedia: 1/64 for Giovanni; floor 6 |
+| Giovanni (counted separately) | 1/128 · **1/64** · 1/20 | 6 | medium | Bulbapedia: 1/64 for Giovanni; floor 6 |
 | Eggs hatched | 1/128 · **1/64** · 1/32 | 10 | medium | Bulbapedia: ~1/64 from eggs |
 | Good Friend trade | — | 1 | high | Trade floors are exact |
 | Great Friend trade | — | 2 | high | " |

@@ -136,9 +136,11 @@ purified share at the purified probability, and the rest at the plain one. They
 are not averaged into a single fudged probability. The λ table still shows both
 pure endpoints side by side regardless of `f`.
 
-Note the divisor is the **effective** shadow count, not the raw Hero total: the
-Hero medal already contains Leaders and Giovanni, so using it raw would inflate
-the denominator and understate how purified your collection is.
+Note the divisor is the **effective** shadow count, not the raw one: the Hero
+medal already contains the Leaders carved out of it, so summing raw counts would
+double-count them, inflate the denominator, and understate how purified your
+collection is. (Giovanni is *not* inside Hero — see §3.3.1 — so it is added
+separately.)
 
 **Known approximations.**
 
@@ -169,11 +171,11 @@ So sources form a tree and every child's count is subtracted from its parent:
 Collector          "Catch ___ Pokémon"                          50,000
 ├── weather-boosted / Community Day / other event catches       [derived]
 ├── Champion       "Win ___ raids"                               2,000
-│   ├── Battle Legend  "Win ___ Legendary raids"                 2,000
 │   └── Shadow raids                                            [derived]
+├── Battle Legend  "Win ___ Legendary raids"                     2,000
+├── Ultra Hero     "Defeat Giovanni ___ time(s)"                    50
 ├── Pokémon Ranger "Complete ___ Field Research tasks"           2,500
 └── Hero           "Defeat ___ Team GO Rocket members"           2,000
-    ├── Ultra Hero "Defeat Giovanni ___ time(s)"                    50
     └── Leaders / weather-boosted grunts                        [derived]
 
 Breeder            "Hatch ___ Eggs"                              2,500
@@ -194,11 +196,36 @@ tier 1–4 raids, the Hero remainder is ordinary grunts.
 | Raid catches ⊂ Collector | high | Raid bosses are caught, and the medal text is unqualified |
 | Research catches ⊂ Collector | high | Same |
 | Rocket catches ⊂ Collector | high | Same |
-| Legendary raids ⊂ Champion | high | "Win ___ raids" does not exclude 5-star |
+| Legendary raids ⊂ Champion | **DISPROVEN** | Modelled as nested until a real account reported Champion 530 with Battle Legend 664 — impossible if Champion contained it. Now independent counters. See §3.3.1 |
 | Shadow raids ⊂ Champion | high | Shadow raids are raids |
 | Leaders ⊂ Hero | high | Leaders are Team GO Rocket members; the medal was renamed from "Grunts" to "members" |
-| Giovanni ⊂ Hero | **low** | Some sources say Giovanni only feeds Ultra Hero. Immaterial either way — at platinum it is 50 battles against 2,000 |
+| Giovanni ⊂ Hero | **rejected** | Same independent-counter pattern as Champion/Battle Legend, and sources say Giovanni feeds Ultra Hero specifically. Immaterial either way — at platinum it is 50 battles against 2,000 |
 | Eggs ⊄ Collector | medium | Hatching is not catching, and Breeder tracks it separately |
+
+#### 3.3.1 The containment that turned out to be wrong
+
+The first version of this model treated Battle Legend as a subset of Champion,
+reasoning that the in-game text "Win ___ raids" is unqualified so it must
+include Legendary wins. That was a plausible reading of the medal text and it
+was wrong.
+
+A real account reported **Champion 530, Battle Legend 664**. Under the nested
+model that is arithmetically impossible, and the app duly accused the player of
+entering bad numbers. The player was right and the model was wrong. Corroborating
+evidence: Niantic Support publicly acknowledged in 2017 that Legendary raids
+were not counting toward the Champion medal, and Champion and Battle Legend
+share an identical 2,000 platinum threshold, which is a strange design unless
+they count different things.
+
+Two lessons are baked into the app as a result:
+
+1. **Battle Legend and Ultra Hero are independent counters**, entered exactly
+   as the game shows them, and never subtracted from Champion or Hero.
+2. **A containment conflict is reported as a possible bug in the model, not as
+   user error.** When the conflict is between two medal numbers — things the
+   player read off a screen rather than estimated — the message now says so
+   directly, because the medals are the ground truth and the assumed
+   relationship between them is the guess.
 
 **The validator is the safety net.** If any of these is wrong for your account,
 your real medal numbers will not fit: subsets summing to more than their parent

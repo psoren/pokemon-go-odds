@@ -135,17 +135,25 @@ export function validate(inputs: ModelInputs, scenario: Scenario = 'mid'): Valid
     const childTotal = children.reduce((acc, c) => acc + (resolved[c.id] ?? 0), 0);
     const parentTotal = resolved[parentId] ?? 0;
     if (parentTotal > 0 && childTotal > parentTotal) {
-      const parentName = parent.medal
-        ? `${parent.label} (${parent.medal.name} medal)`
-        : parent.label;
+      const parentName = parent.medal ? parent.medal.name : parent.label;
+      const derived = children.filter((c) => c.derivedFrom);
+      const medalChildren = children.filter((c) => c.medal);
       issues.push({
         sourceId: parentId,
         severity: 'error',
         message:
           `${children.map((c) => c.label).join(' + ')} = ${childTotal.toLocaleString()}, ` +
           `which is more than your ${parentName} total of ${parentTotal.toLocaleString()}. ` +
-          `These are carved out of that total, not extra encounters. Lower the ` +
-          `assumptions or raise the medal. The excess is being ignored.`,
+          (medalChildren.length > 0
+            ? `If those medal numbers are what the game shows you, then they are ` +
+              `independent counters rather than nested ones, and this app has the ` +
+              `relationship wrong — that is a bug here, not a mistake by you. `
+            : '') +
+          (derived.length > 0
+            ? `Otherwise the assumed split is too high for how you play; adjust it under ` +
+              `Assumptions. `
+            : '') +
+          `The excess is being ignored for now.`,
       });
     }
   }

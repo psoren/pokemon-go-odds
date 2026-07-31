@@ -251,14 +251,37 @@ describe('medal nesting', () => {
     expect(roots).toEqual(['collector', 'eggs', 'gentleman', 'purifier']);
   });
 
-  it('nests raids and Rocket two levels deep under Collector', () => {
+  it('nests everything under the medal that actually contains it', () => {
     expect(depthOf('collector')).toBe(0);
     expect(depthOf('raid-champion')).toBe(1);
-    expect(depthOf('raid-legend')).toBe(2);
     expect(depthOf('shadow-raid')).toBe(2);
     expect(depthOf('rocket-hero')).toBe(1);
-    expect(depthOf('giovanni')).toBe(2);
+    expect(depthOf('leader-shadow')).toBe(2);
     expect(depthOf('trade-lucky')).toBe(2);
+    // Independent counters sit beside their look-alike parent, not inside it.
+    expect(depthOf('raid-legend')).toBe(1);
+    expect(depthOf('giovanni')).toBe(1);
+  });
+
+  it('treats Battle Legend and Ultra Hero as independent counters', () => {
+    // Regression: modelling these as nested produced a false "subsets exceed
+    // their parent" error for any player whose Battle Legend exceeds Champion,
+    // which is a perfectly ordinary raid-heavy account.
+    expect(SOURCES_BY_ID['raid-legend'].subsetOf).toBe('collector');
+    expect(SOURCES_BY_ID['giovanni'].subsetOf).toBe('collector');
+    expect(childrenOf('raid-champion').map((c) => c.id)).not.toContain('raid-legend');
+    expect(childrenOf('rocket-hero').map((c) => c.id)).not.toContain('giovanni');
+  });
+
+  it('accepts more Legendary raids than total raids without complaining', () => {
+    // Real reported account: Champion 530, Battle Legend 664.
+    const counts = { collector: 95_000, 'raid-champion': 530, 'raid-legend': 664 };
+    expect(validate(inputs(counts))).toHaveLength(0);
+    expect(result(counts, 'raid-champion').effectiveCount).toBeGreaterThan(0);
+    expect(result(counts, 'raid-legend').effectiveCount).toBe(664);
+    // Both sets of raids are counted in full, not clamped away.
+    const out = runModel(inputs(counts), 'mid');
+    expect(out.lambdaShiny).toBeGreaterThan(0);
   });
 
   it('keeps eggs out of the Collector subtree — hatching is not catching', () => {
@@ -276,11 +299,14 @@ describe('medal nesting', () => {
       'rocket-hero': 5_000,
       giovanni: 30,
     };
+    // Collector loses every direct child, which now includes the independent
+    // Battle Legend and Ultra Hero counters.
     expect(result(counts, 'collector', patch).effectiveCount).toBe(
-      100_000 - (1_000 + 2_000 + 5_000),
+      100_000 - (1_000 + 2_000 + 500 + 5_000 + 30),
     );
-    expect(result(counts, 'raid-champion', patch).effectiveCount).toBe(2_000 - 500);
-    expect(result(counts, 'rocket-hero', patch).effectiveCount).toBe(5_000 - 30);
+    // Champion keeps its full count: Legendary raids are not carved out of it.
+    expect(result(counts, 'raid-champion', patch).effectiveCount).toBe(2_000);
+    expect(result(counts, 'rocket-hero', patch).effectiveCount).toBe(5_000);
     expect(validate(inputs(counts, patch))).toHaveLength(0);
   });
 
@@ -311,12 +337,19 @@ describe('medal nesting', () => {
   });
 
   it('names the offending medal in the validation message', () => {
+    // Raids + research alone exceeding the Collector total.
     const issues = validate(
-      inputs({ collector: 500_000, 'raid-champion': 10, 'raid-legend': 90 }),
+      inputs({ collector: 100, 'raid-champion': 400, research: 300 }),
     );
     expect(issues).toHaveLength(1);
-    expect(issues[0].sourceId).toBe('raid-champion');
-    expect(issues[0].message).toContain('Champion');
+    expect(issues[0].sourceId).toBe('collector');
+    expect(issues[0].message).toContain('Collector');
+  });
+
+  it('blames the model, not the user, when the conflict is between two medals', () => {
+    const issues = validate(inputs({ collector: 100, 'raid-champion': 400 }));
+    expect(issues[0].message).toContain('independent counters');
+    expect(issues[0].message).not.toContain('raise the medal');
   });
 
   it('stays quiet about a parent that has simply not been entered yet', () => {
@@ -424,10 +457,21 @@ describe('purification comes from the Purifier medal', () => {
     expect(r.purifiedFraction).toBe(1);
   });
 
-  it('divides by effective shadow counts, not the raw Hero total', () => {
-    // Hero 1000 with Giovanni 200 carved out is still 1000 shadows in total,
-    // so a Purifier of 500 is half — the nesting must not inflate the divisor.
+  it('divides by effective shadow counts, not raw ones', () => {
+    // Hero 1000 (which keeps all 1000, Giovanni being independent) plus
+    // Giovanni 200 = 1200 shadows; a Purifier of 500 covers 5/12 of them.
     const r = result({ 'rocket-hero': 1_000, giovanni: 200, purifier: 500 }, 'giovanni', patch);
+    expect(r.purifiedFraction).toBeCloseTo(500 / 1200, 12);
+  });
+
+  it('does not let a nested source inflate the shadow divisor', () => {
+    // Leaders are carved OUT of Hero, so Hero + Leaders must count 1000 total,
+    // not 1200. Purifier 500 is therefore exactly half.
+    const r = result(
+      { 'rocket-hero': 1_000, purifier: 500 },
+      'rocket-hero',
+      { assumptions: { ...noAssumptions(), 'leader-shadow': { low: 0.2, mid: 0.2, high: 0.2 } } },
+    );
     expect(r.purifiedFraction).toBeCloseTo(0.5, 12);
   });
 
