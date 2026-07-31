@@ -48,7 +48,9 @@ export function Headline({ bundle }: { bundle: ScenarioBundle }) {
               {fmtRange(lo, hi)}
             </div>
             <div className="mt-1 text-xs text-muted">
-              {exact ? (
+              {mid === 0 ? (
+                <>waiting on your medal counts</>
+              ) : exact ? (
                 <>exact — IV floors are known mechanics, not estimates</>
               ) : (
                 <>
