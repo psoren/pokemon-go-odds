@@ -92,10 +92,14 @@ you played. This is the main reason every headline number is a range.
 A traded Pokémon was already counted at whatever source it was caught from.
 Trading re-rolls its **IVs only** — shininess is not re-rolled. So:
 
-- Trade inputs are entered as **"number of shiny Pokémon traded."**
-- They contribute **zero** to the shiny expected count.
+- The Gentleman medal ("Trade ___ Pokémon") is a **separate root**, never added
+  to or subtracted from Collector. Trading does not create a Pokémon.
+- Trade sources contribute **zero** to the shiny expected count.
 - They contribute a fresh IV roll at the trade's floor, which — because the
   Pokémon is already shiny — lands in both the hundo and shundo columns.
+- What the model actually needs is the *shiny* trades, which no medal counts.
+  That is derived from Gentleman as a fraction (§3.4) and split across
+  friendship levels, with Best Friend taking the remainder.
 
 **Known approximation.** Strictly, re-rolling a Pokémon's IVs should also
 *remove* the hundo probability it carried at its original source. If you trade
@@ -120,19 +124,35 @@ P(purify-hundo | F) = (min(3, 16 − F) / (16 − F))³
 which is exactly 27× the un-purified odds for any floor `F ≤ 12`. Floor 6 gives
 27/1000; floor 0 gives 27/4096.
 
-The app shows the purified path as its own column and never lets shadows
-contribute to shundos-via-trade. The "count shadows as purified" toggle decides
-whether the purified path feeds the totals and distributions.
+**How much of your collection takes that path is read off the Purifier medal**
+("Purify ___ Shadow Pokémon"), divided by the shadows you actually caught:
 
-**Note on the shiny case.** A *shiny* shadow that purifies into a hundo is a
-shundo. The app models this: with the toggle on, shadow sources contribute
-`count · p_shiny · P(purify-hundo)` to the shundo column. This is a real path to
-a shundo that does not involve a trade.
+```
+f = min(1, Purifier ÷ (effective shadow counts))
+```
 
-**Known approximation.** Purification is all-or-nothing here. In practice you
-purify selectively — usually only the shadows that are already close — and a
-purified shadow loses the shadow damage bonus, so most players do not purify
-everything. Treat the toggle as the two ends of a range, not a prediction.
+Each shadow source then splits into two genuinely different trial groups — the
+purified share at the purified probability, and the rest at the plain one. They
+are not averaged into a single fudged probability. The λ table still shows both
+pure endpoints side by side regardless of `f`.
+
+Note the divisor is the **effective** shadow count, not the raw Hero total: the
+Hero medal already contains Leaders and Giovanni, so using it raw would inflate
+the denominator and understate how purified your collection is.
+
+**Known approximations.**
+
+- Purification is applied uniformly across shadow sources. In practice you
+  purify selectively — usually the ones already close to perfect — so a real
+  account's purified shadows are better than a random sample. This makes the
+  model *understate* purified hundos for a careful player.
+- A *shiny* shadow that purifies into a hundo is a shundo, and the app models
+  that: shadow sources contribute `count · p_shiny · P(purify-hundo)` to the
+  shundo column for the purified share. This is a real path to a shundo that
+  does not involve a trade.
+- Purifying costs stardust and candy and removes the shadow damage bonus, so
+  most players never purify everything. The medal tells the truth about what you
+  did, which is the whole point of using it.
 
 ### 3.3 Counts come from medals, and medals overlap
 
@@ -147,17 +167,20 @@ So sources form a tree and every child's count is subtracted from its parent:
 
 ```
 Collector          "Catch ___ Pokémon"                          50,000
-├── weather-boosted / Community Day / other event catches       (no medal)
+├── weather-boosted / Community Day / other event catches       [derived]
 ├── Champion       "Win ___ raids"                               2,000
 │   ├── Battle Legend  "Win ___ Legendary raids"                 2,000
-│   └── Shadow raids                                            (no medal)
+│   └── Shadow raids                                            [derived]
 ├── Pokémon Ranger "Complete ___ Field Research tasks"           2,500
 └── Hero           "Defeat ___ Team GO Rocket members"           2,000
-    ├── Rocket Leaders                                          (no medal)
     ├── Ultra Hero "Defeat Giovanni ___ time(s)"                    50
-    └── weather-boosted grunts                                  (no medal)
+    └── Leaders / weather-boosted grunts                        [derived]
 
 Breeder            "Hatch ___ Eggs"                              2,500
+Gentleman          "Trade ___ Pokémon"                           2,500
+└── shiny trades → lucky / good / great / ultra                 [derived]
+    └── Best Friend trades                                      [remainder]
+Purifier           "Purify ___ Shadow Pokémon"                   1,000
 ```
 
 A parent's *remainder* after subtraction is what gets its own rate: the
@@ -199,10 +222,50 @@ falsifiable rather than silent.
   Day catch is genuinely both, and the model has no cell for it. Put it in
   Community Day: the shiny rate difference (1/25 vs 1/512) dwarfs the IV floor
   difference (0 vs 4).
-- **No medal exists for shiny trades.** The Gentleman medal counts all trades.
-  The trade fields must be counted by hand, which makes them the least reliable
-  inputs in the app — and, per the contribution chart, usually the most
-  important ones. That is an uncomfortable combination and worth knowing.
+- **No medal exists for shiny trades.** The Gentleman medal counts all trades,
+  so the shiny share is derived (§3.4) rather than known. That derived number is
+  the least reliable input in the app — and, per the contribution chart, usually
+  the most important one. That is an uncomfortable combination and worth knowing.
+
+### 3.4 Counts no medal tracks are derived, not invented silently
+
+Eleven of the model's counts have no medal behind them. Rather than demand
+eleven extra guesses from the user, each is derived as a fraction of a
+medal-backed parent:
+
+| Derived | Share of | low / mid / high |
+|---|---|---|
+| Weather-boosted catches | Collector | 20 / 30 / 45 % |
+| Community Day featured species | Collector | 1 / 3 / 6 % |
+| Other event-boosted catches | Collector | 3 / 8 / 15 % |
+| Shadow raids | Champion | 0 / 1 / 4 % |
+| Rocket Leaders | Hero | 5 / 12 / 20 % |
+| Weather-boosted grunt shadows | Hero | 15 / 25 / 40 % |
+| Shiny trades | Gentleman | 4 / 12 / 25 % |
+| Lucky trades | shiny trades | 5 / 15 / 35 % |
+| Good / Great / Ultra trades | shiny trades | 0-8 / 0-10 / 0-15 % |
+| Best Friend trades | shiny trades | the remainder |
+
+**These fractions are not sourced and not measured.** No medal, no datamine and
+no community study tells you what share of your catches happened in boosted
+weather. They are plausible defaults, nothing more.
+
+Three things keep that honest rather than misleading:
+
+1. **They are visible and editable.** The Assumptions panel shows each derived
+   count, what it is a share of, and why the default is what it is.
+2. **They move with the scenarios.** The low and high runs use the low and high
+   fractions, so the headline range covers "my assumed splits are wrong"
+   alongside "the community rates are wrong". An assumption you are unsure about
+   *widens* the answer instead of quietly biasing it. This is why the shundo
+   range is much wider than it was when these were typed in by hand — that width
+   was always real, it was just hidden before.
+3. **The dominant one is called out.** Shiny trades usually drive most of the
+   expected shundos, so the UI says so directly rather than burying it.
+
+The honest summary: the medals are exact, the shiny rates are contested
+estimates, and these splits are guesses. The app tries never to let those three
+look like the same kind of number.
 
 ---
 

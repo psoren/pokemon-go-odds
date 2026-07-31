@@ -6,8 +6,11 @@ import { Panel } from './ui';
  * Per-source λ breakdown. Shadows get a dedicated purification column, because
  * they cannot be traded and purification is their only route to a hundo upgrade.
  */
-export function SourceTable({ model, assumePurified }: { model: ModelOutput; assumePurified: boolean }) {
-  const rows = model.sources.filter((r) => r.effectiveCount > 0);
+export function SourceTable({ model }: { model: ModelOutput }) {
+  const rows = model.sources.filter(
+    (r) => r.effectiveCount > 0 && r.def.kind !== 'reference',
+  );
+  const purified = model.purifiedFraction;
 
   return (
     <Panel
@@ -64,20 +67,12 @@ export function SourceTable({ model, assumePurified }: { model: ModelOutput; ass
                   <td className="py-1.5 px-2 text-right text-shiny">
                     {r.def.kind === 'trade' ? '0' : fmtLambda(r.lambdaShiny)}
                   </td>
-                  <td
-                    className={`py-1.5 px-2 text-right ${
-                      r.def.kind === 'shadow' && assumePurified ? 'text-muted line-through' : 'text-hundo'
-                    }`}
-                  >
+                  <td className="py-1.5 px-2 text-right text-hundo">
                     {fmtLambda(r.lambdaHundoAsCaught)}
                   </td>
                   <td
                     className={`py-1.5 px-2 text-right ${
-                      r.def.kind === 'shadow'
-                        ? assumePurified
-                          ? 'text-violet-200'
-                          : 'text-violet-300/70'
-                        : 'text-edge'
+                      r.def.kind === 'shadow' ? 'text-violet-300/80' : 'text-edge'
                     }`}
                   >
                     {r.def.kind === 'shadow' ? fmtLambda(r.lambdaHundoPurified) : '—'}
@@ -111,9 +106,11 @@ export function SourceTable({ model, assumePurified }: { model: ModelOutput; ass
       )}
       <p className="mt-3 text-[11px] leading-relaxed text-muted">
         Shadows cannot be traded, so their only IV upgrade is purification (+2 per stat, capped at
-        15) — a shadow needs 13/13/13 or better to purify into a hundo. The purified column is
-        {assumePurified ? ' currently feeding' : ' informational only and does not feed'} the totals
-        and distributions; toggle “count shadows as purified” to change that.
+        15) — a shadow needs 13/13/13 or better to purify into a hundo, which is 27× better odds.
+        The two shadow columns are the pure endpoints: caught-and-kept versus caught-and-purified.{' '}
+        {purified > 0
+          ? `Your Purifier medal puts ${(purified * 100).toFixed(0)}% of your shadows on the purified path, and the λ hundo and λ shundo columns blend the two accordingly.`
+          : 'Enter your Purifier medal to blend the two — with it at zero, every shadow is counted as caught and kept.'}
       </p>
     </Panel>
   );

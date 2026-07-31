@@ -15,7 +15,14 @@ export type SourceKind =
    * A trade of an ALREADY-SHINY Pokémon. Re-rolls IVs only. Contributes
    * hundos/shundos but NEVER shinies — the shiny was counted at its origin.
    */
-  | 'trade';
+  | 'trade'
+  /**
+   * Not an encounter source at all: a medal read purely to drive derived
+   * counts below it (Gentleman → shiny trades) or to parameterise the model
+   * (Purifier → what fraction of your shadows are purified). Contributes zero
+   * to every output on its own.
+   */
+  | 'reference';
 
 export type Confidence = 'high' | 'medium' | 'low';
 
@@ -35,6 +42,25 @@ export interface RateEstimate {
 /** Which end of the rate estimates to evaluate the model at. */
 export type Scenario = 'low' | 'mid' | 'high';
 
+/**
+ * A count that no medal tracks, expressed as a fraction of a medal-backed
+ * parent so it scales with whatever the user actually enters.
+ *
+ * These fractions are ROUGH DEFAULTS, not sourced data — nothing in the game
+ * or the community datasets tells you what share of your catches were
+ * weather-boosted. They exist so that entering nothing but medals still yields
+ * a usable answer, they are all editable, and their low/high spread feeds the
+ * headline range so the uncertainty they add is visible rather than hidden.
+ */
+export interface DerivedFrom {
+  /** Source id whose resolved count this is a fraction of. */
+  parentId: string;
+  /** Fraction of the parent, per scenario. */
+  fraction: RateEstimate;
+  /** Shown in the assumptions UI. */
+  rationale: string;
+}
+
 export interface SourceDef {
   id: string;
   label: string;
@@ -51,6 +77,12 @@ export interface SourceDef {
   medal: Medal | null;
   /** Guidance for sources with no medal. Required in spirit when `medal` is null. */
   medalNote?: string;
+  /**
+   * Present when no medal tracks this count, so it is derived as a fraction of
+   * a medal-backed parent instead of being typed in. Mutually exclusive with
+   * `medal`: a source is either read off a medal or assumed from one.
+   */
+  derivedFrom?: DerivedFrom;
   /**
    * If set, this source's count is a SUBSET of the referenced source's count
    * and is subtracted from it so catches are not double counted.
@@ -72,20 +104,22 @@ export interface RateOverride {
 }
 
 export interface ModelInputs {
-  /** sourceId -> raw count entered by the user. */
+  /** sourceId -> raw count entered by the user. Medal-backed sources only. */
   counts: Record<string, number>;
   /** sourceId -> rate/floor overrides. */
   overrides: Record<string, RateOverride>;
-  /** Treat shadow Pokémon as purified (+2 to each IV, capped at 15). */
-  assumePurified: boolean;
+  /** sourceId -> overridden derived fraction, for sources no medal tracks. */
+  assumptions: Record<string, Partial<RateEstimate>>;
 }
 
 export interface SourceResult {
   def: SourceDef;
   /** Count after subtracting any child sources that are subsets of this one. */
   effectiveCount: number;
-  /** Count as the user typed it, before subset subtraction. */
+  /** Resolved count before subset subtraction: typed for medals, derived otherwise. */
   rawCount: number;
+  /** Share of this source's shadows assumed purified, from the Purifier medal. */
+  purifiedFraction: number;
   ivFloor: number;
   /** P(shiny) for this source. 0 for trades. */
   shinyP: number;
@@ -133,6 +167,8 @@ export interface ModelOutput {
   shundo: Distribution;
   /** Non-fatal problems with the inputs (e.g. subsets exceeding their parent). */
   validation: ValidationIssue[];
+  /** Share of all shadows assumed purified (Purifier medal ÷ shadows caught). */
+  purifiedFraction: number;
 }
 
 export interface ValidationIssue {

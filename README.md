@@ -1,15 +1,17 @@
 # Pokémon GO rarity calculator
 
-A local web app that takes your lifetime account stats and returns the expected
-number — and the full probability distribution — of **shinies**, **hundos** and
+**Type in your medals. See where you're at.**
+
+Nine numbers off your in-game Medals screen, and the app returns the expected
+number — and full probability distribution — of **shinies**, **hundos** and
 **shundos** you should have.
 
 Every encounter source is treated as an independent binomial trial with its own
 shiny rate and IV floor. The app sums expected values across sources, reports
 `P(k)` for `k = 0..6` both as a Poisson approximation and as an exact
 Poisson-binomial convolution, and shows which sources actually drive your
-rarities. (Spoiler: for most accounts it is a handful of lucky trades and
-legendary raids, not tens of thousands of wild catches.)
+rarities. (Spoiler: for most accounts it is lucky trades and legendary raids,
+not tens of thousands of wild catches.)
 
 No backend, no API calls, no telemetry. Inputs persist to `localStorage`.
 
@@ -35,9 +37,11 @@ secondary.** The shiny rates feeding this model are contested community
 estimates, and the UI is deliberately built not to imply more precision than
 the inputs support.
 
-The hundo number has no range. That is not a bug — IV floors are exact,
-datamined game mechanics rather than estimates, so nothing in the rate config
-moves them.
+The hundo range is always narrower than the shiny range, and if you pin the
+assumptions it collapses to a single number. That is not a bug: IV floors are
+exact, datamined game mechanics, so no shiny rate can move a hundo count. All
+that remains is uncertainty about *which* bucket your catches fell into — how
+many were weather-boosted, how many of your trades were lucky.
 
 The `P(k)` panel shows two columns per distribution:
 
@@ -48,39 +52,62 @@ The `P(k)` panel shows two columns per distribution:
 They should agree closely; the app flags any `k` where they diverge by more
 than one percentage point. Trust the exact column.
 
-## Where each number comes from (Medals screen)
+## The nine medals you enter
 
-Every count is meant to be read straight off the in-game Medals screen —
-trainer avatar → scroll to **Medals**. The medal screen shows your exact
-progress (“47,312 / 50,000”), so you never have to estimate a medal-backed
-number. Medal names, in-game descriptions and thresholds are from
-[Bulbapedia's medal list](https://bulbapedia.bulbagarden.net/wiki/Medal_(GO))
-and live in [`src/config/medals.ts`](src/config/medals.ts).
+Open Pokémon GO → tap your trainer avatar → scroll to **Medals**. Each medal
+shows your exact progress (“47,312 / 50,000”) — type that number. That is the
+entire required input.
 
 | Input | Medal | In-game text | Platinum |
 |---|---|---|---|
 | Pokémon caught — all time | **Collector** | “Catch ___ Pokémon” | 50,000 |
-| …research encounters | **Pokémon Ranger** | “Complete ___ Field Research tasks” | 2,500 |
+| Field Research tasks completed | **Pokémon Ranger** | “Complete ___ Field Research tasks” | 2,500 |
 | Raids won — all tiers | **Champion** | “Win ___ raids” | 2,000 |
-| …Legendary (tier 5) | **Battle Legend** | “Win ___ Legendary raids” | 2,000 |
+| Legendary raids won | **Battle Legend** | “Win ___ Legendary raids” | 2,000 |
 | Team GO Rocket members defeated | **Hero** | “Defeat ___ Team GO Rocket members” | 2,000 |
-| …Giovanni | **Ultra Hero** | “Defeat Giovanni ___ time(s)” | 50 |
+| Giovanni defeated | **Ultra Hero** | “Defeat Giovanni ___ time(s)” | 50 |
 | Eggs hatched | **Breeder** | “Hatch ___ Eggs” | 2,500 |
-| *(purification context)* | **Purifier** | “Purify ___ Shadow Pokémon” | 1,000 |
+| Pokémon traded — all time | **Gentleman** | “Trade ___ Pokémon” | 2,500 |
+| Shadow Pokémon purified | **Purifier** | “Purify ___ Shadow Pokémon” | 1,000 |
 
-### Inputs with no medal
+Medal names, in-game descriptions and all four tier thresholds are from
+[Bulbapedia's medal list](https://bulbapedia.bulbagarden.net/wiki/Medal_(GO))
+and live in [`src/config/medals.ts`](src/config/medals.ts). Tapping a tier chip
+in the UI fills in that threshold, for when you have already maxed a medal out.
 
-These are marked **“no medal — estimate”** in the UI. Nothing in the game
-tracks them, and inventing a medal for them would be worse than asking you to
-estimate:
+The last two are not encounter sources. **Gentleman** is the denominator the
+shiny-trade estimate is built on; **Purifier** sets what share of your shadows
+get the purification IV bonus.
 
-weather-boosted catches · Community Day catches · other event catches ·
-shadow raids · Rocket Leader defeats · weather-boosted grunts · **shiny trades
-at every friendship level**
+## Everything else is derived, and you can ignore it
 
-The **Gentleman** medal (“Trade ___ Pokémon”, platinum 2,500) counts *all*
-trades, not shiny ones, so it cannot fill the trade fields. Count your shiny
-trades by hand.
+Eleven of the model's counts have no medal at all — nothing in the game tracks
+what share of your catches were weather-boosted, or how many of your trades
+were shiny. Rather than making you guess at eleven extra fields, the app
+derives each one as a **fraction of a medal you did enter**, and puts them all
+behind a collapsed **Assumptions** panel:
+
+| Derived | As a share of | Default |
+|---|---|---|
+| Weather-boosted catches | Collector | 30% |
+| Community Day featured species | Collector | 3% |
+| Other event-boosted catches | Collector | 8% |
+| Shadow raids | Champion | 1% |
+| Rocket Leaders | Hero | 12% |
+| Weather-boosted grunt shadows | Hero | 25% |
+| Shiny trades | Gentleman | 12% |
+| Lucky / Good / Great / Ultra trades | shiny trades | 15% / 2% / 3% / 5% |
+| Best Friend trades | shiny trades | the remainder |
+
+**These defaults are rough guesses, not data.** No community dataset measures
+them. They exist so that entering medals alone produces a usable answer, they
+are all editable as percentages, and each carries a low/mid/high band that
+feeds the headline range — so an assumption you are unsure about *widens* the
+answer rather than quietly biasing it.
+
+One of them matters far more than the rest: **shiny trades**. Lucky trades
+usually dominate expected shundos, and nothing in the game counts them. If you
+replace one number in that panel, replace that one.
 
 ### Medals overlap — so the app subtracts
 
@@ -92,23 +119,24 @@ would double count them.
 So the inputs form a tree, and every child is subtracted from its parent:
 
 ```
-Collector  "Catch ___ Pokémon"
-├── weather-boosted / Community Day / other event catches
-├── Champion  "Win ___ raids"
-│   ├── Battle Legend  "Win ___ Legendary raids"
-│   └── Shadow raids
-├── Pokémon Ranger  "Complete ___ Field Research tasks"
-└── Hero  "Defeat ___ Team GO Rocket members"
-    ├── Rocket Leaders
-    ├── Ultra Hero  "Defeat Giovanni ___ time(s)"
-    └── weather-boosted grunts
+Collector  "Catch ___ Pokémon"                          [medal]
+├── weather-boosted / Community Day / other events      [derived]
+├── Champion  "Win ___ raids"                           [medal]
+│   ├── Battle Legend  "Win ___ Legendary raids"        [medal]
+│   └── Shadow raids                                    [derived]
+├── Pokémon Ranger  "Complete ___ Field Research tasks" [medal]
+└── Hero  "Defeat ___ Team GO Rocket members"           [medal]
+    ├── Ultra Hero  "Defeat Giovanni ___ time(s)"       [medal]
+    └── Leaders / weather-boosted grunts                [derived]
 
-Breeder  "Hatch ___ Eggs"        (hatching is not catching — a separate root)
-Trades                           (re-rolls of Pokémon counted elsewhere)
+Breeder  "Hatch ___ Eggs"          (hatching is not catching — its own root)
+Gentleman  "Trade ___ Pokémon"     (re-rolls, not new Pokémon — its own root)
+└── shiny trades → lucky / good / great / ultra, remainder to Best Friend
+Purifier  "Purify ___ Shadow Pokémon"   (a parameter, not a source)
 ```
 
 What is left over after subtraction is the remainder: plain unboosted wild
-catches, tier 1–4 raids, ordinary grunts. The app shows both numbers — e.g.
+catches, tier 1–4 raids, ordinary grunts. The λ table shows both numbers — e.g.
 `107,700 (180,000)` means 180,000 entered, 107,700 left after carving out the
 subsets.
 
@@ -121,7 +149,7 @@ summing to more than their parent is a hard validation error. See
 
 All rates live in [`src/config/rates.ts`](src/config/rates.ts), fully separated
 from the math, each with a source comment and a low/mid/high band. **Every one
-of them is editable at runtime** — open the `rate` disclosure next to any source
+of them is editable at runtime** — open the `info` disclosure next to any medal
 in the app. Overrides persist with your inputs.
 
 Niantic has never published shiny rates. Everything below is community-estimated,
@@ -163,15 +191,16 @@ Most calculators of this shape get at least one of these wrong.
 
 **1. Trades are re-rolls, not new Pokémon.** A traded Pokémon was already
 counted at its original source. Trading re-rolls its *IVs only* — not its
-shininess. So the trade fields ask for the number of **shiny Pokémon you
-traded**, they contribute **zero** to the shiny count, and they contribute a
-fresh IV roll at the trade's floor to the hundo/shundo counts. This is
+shininess. So trades contribute **zero** to the shiny count, and contribute only
+a fresh IV roll at the trade's floor to the hundo/shundo counts. This is why
+your Gentleman medal cannot simply be added to your Collector medal, and it is
 explicitly unit tested.
 
 **2. Shadows cannot be traded.** Purification adds +2 to each IV (capped at 15),
 so a shadow needs 13/13/13 or better to purify into a hundo:
-`P = (3 / (16 − F))³`, exactly 27× the un-purified odds. Shadows get their own
-purification column and never contribute to shundos-via-trade.
+`P = (3 / (16 − F))³`, exactly 27× the un-purified odds. Your **Purifier** medal
+divided by the shadows you caught sets what share of them take that path; the λ
+table shows both pure endpoints side by side regardless.
 
 **3. Medals overlap, so counts are subtracted rather than added.** Community
 Day and event catches are a subset of your Collector total — and so are raids,
@@ -197,10 +226,15 @@ The math module is tested against known values:
 | λ = 0.71 | P(0)=0.4916, P(1)=0.3491, P(2)=0.1239 |
 | Poisson-binomial DP | sums to 1.0 within 1e-9 |
 
-Plus: trade inputs never increase the shiny expected count, subset subtraction,
-scenario ordering, rate/floor overrides, and the large-`n` small-`p` numerics
-(the pmf is computed in log space so 200 000 catches at 1/512 does not underflow
-to garbage).
+Plus 60-odd model tests: medal threshold and mapping integrity, that every
+source is exactly one of medal-backed / derived / remainder, an acyclic subset
+graph, two-level subtraction, a no-double-count invariant, trade inputs never
+increasing the shiny expected count, Purifier-driven purification blending
+(including that it divides by *effective* shadow counts), derived counts scaling
+with their parent medal, scenario ordering, rate/floor/assumption overrides, the
+all-medals-at-platinum case, and the large-`n` small-`p` numerics (the pmf is
+computed in log space so 200 000 catches at 1/512 does not underflow to
+garbage).
 
 ## Structure
 
@@ -214,7 +248,10 @@ src/
     forward.ts           the forward model: counts -> λ and distributions
     math.test.ts
     forward.test.ts
-  components/            React UI
+  components/
+    MedalForm.tsx        the nine medal inputs — the whole primary surface
+    AssumptionsPanel.tsx the derived counts, collapsed by default
+    ...                  results panels, charts, tables
   hooks/                 localStorage persistence
   lib/format.ts          display formatting
 MODEL.md                 assumptions and known approximations
@@ -223,7 +260,16 @@ MODEL.md                 assumptions and known approximations
 ## Caveats
 
 Read [MODEL.md](MODEL.md). The short version: the math is exact, the rates are
-estimates, and the single biggest source of error is that **your lifetime catch
-total includes many species that were shiny-locked at the time** — so the model
-will tend to overestimate expected wild shinies unless you override the wild
-rate downward to a blended effective rate.
+community estimates, and the derived splits are guesses. Three things bias the
+answer in known directions:
+
+1. **Your Collector total includes species that were shiny-locked at the time.**
+   The model takes the count at face value, so it overestimates expected wild
+   shinies — probably substantially. Override the Collector shiny rate downward
+   to a blended effective rate if you want a fair comparison.
+2. **Champion, Hero and Pokémon Ranger count battles won and tasks completed,
+   not Pokémon caught.** All three run high.
+3. **Shiny trades are a pure guess** and usually dominate expected shundos.
+
+None of these is a math problem. They are all questions about what your numbers
+actually mean.

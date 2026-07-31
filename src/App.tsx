@@ -1,23 +1,25 @@
 import { useMemo } from 'react';
+import { AssumptionsPanel } from './components/AssumptionsPanel';
 import { ContributionChart } from './components/ContributionChart';
 import { DistributionTables } from './components/DistributionTables';
 import { Headline } from './components/Headline';
-import { InputForm } from './components/InputForm';
+import { MedalForm } from './components/MedalForm';
 import { SensitivityView } from './components/SensitivityView';
 import { SourceTable } from './components/SourceTable';
 import { Callout } from './components/ui';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { emptyInputs, runAllScenarios } from './model/forward';
 import type { ModelInputs } from './model/types';
+import { fmtPercent } from './lib/format';
 
-const STORAGE_KEY = 'pokemon-go-odds:inputs:v1';
+const STORAGE_KEY = 'pokemon-go-odds:inputs:v2';
 
 export default function App() {
   const [inputs, setInputs] = useLocalStorage<ModelInputs>(STORAGE_KEY, emptyInputs());
   const bundle = useMemo(() => runAllScenarios(inputs), [inputs]);
   const mid = bundle.mid;
 
-  const hasInput = mid.sources.some((s) => s.rawCount > 0);
+  const hasInput = Object.values(inputs.counts).some((n) => n > 0);
 
   return (
     <div className="mx-auto max-w-[110rem] px-4 py-8 sm:px-6 lg:px-8">
@@ -26,10 +28,10 @@ export default function App() {
           Pokémon GO rarity calculator
         </h1>
         <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted">
-          Enter your lifetime account stats and see how many shinies, hundos and shundos the model
-          expects you to have — as a full probability distribution, not a single number. Every
-          encounter source is an independent binomial trial with its own shiny rate and IV floor.
-          Nothing leaves your browser; inputs are saved to localStorage.
+          Type in your medals. See how many shinies, hundos and shundos you should have — as a
+          full probability distribution, not a single number. Every encounter source is an
+          independent binomial trial with its own shiny rate and IV floor. Nothing leaves your
+          browser; inputs are saved to localStorage.
         </p>
       </header>
 
@@ -37,43 +39,52 @@ export default function App() {
         <Headline bundle={bundle} />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[24rem_minmax(0,1fr)]">
+      <div className="grid gap-6 xl:grid-cols-[26rem_minmax(0,1fr)]">
         <div className="flex flex-col gap-4">
-          <InputForm inputs={inputs} setInputs={setInputs} issues={mid.validation} />
+          <MedalForm inputs={inputs} setInputs={setInputs} issues={mid.validation} />
         </div>
 
         <div className="flex flex-col gap-6">
           {!hasInput && (
-            <Callout tone="info" title="Start with your Collector medal">
-              Open the game, tap your avatar, scroll to <strong>Medals</strong>, and copy the
-              numbers across. <em>Collector</em> is every Pokémon you have caught,{' '}
-              <em>Champion</em> and <em>Battle Legend</em> are raids, <em>Hero</em> and{' '}
-              <em>Ultra Hero</em> are Team GO Rocket, <em>Breeder</em> is eggs. Because Collector
-              already contains your raid, research and Rocket catches, the app subtracts those
-              from it rather than adding them.
+            <Callout tone="info" title="Nine numbers and you are done">
+              Start with <strong>Collector</strong> — every Pokémon you have ever caught. Then
+              Champion and Battle Legend for raids, Hero and Ultra Hero for Team GO Rocket,
+              Breeder for eggs, Pokémon Ranger for research, Gentleman for trades and Purifier
+              for shadows. Because Collector already contains your raid, research and Rocket
+              catches, the app subtracts those from it rather than adding them.
             </Callout>
           )}
 
+          <AssumptionsPanel inputs={inputs} setInputs={setInputs} model={mid} />
           <ContributionChart model={mid} />
           <DistributionTables model={mid} />
           <SensitivityView bundle={bundle} />
-          <SourceTable model={mid} assumePurified={inputs.assumePurified} />
+          <SourceTable model={mid} />
 
           <Callout tone="info" title="What this model does and doesn't know">
-            Shiny and IV rolls are treated as independent, every encounter as an independent trial,
-            and each source's rate as constant over your whole account history — none of which is
-            exactly true. Rates have also changed over the years, and your event mix is not the
-            community average. See <code className="text-slate-300">MODEL.md</code> in the repo for
-            the full list of approximations.
+            Shiny and IV rolls are treated as independent, every encounter as an independent
+            trial, and each source's rate as constant over your whole account history — none of
+            which is exactly true. Champion, Hero and Pokémon Ranger count battles won and tasks
+            completed rather than Pokémon caught, so they run high. And your Collector total
+            includes species that were shiny-locked at the time, which biases expected shinies
+            up further. See <code className="text-slate-300">MODEL.md</code> in the repo for the
+            full list.
           </Callout>
         </div>
       </div>
 
       <footer className="mt-10 border-t border-edge/60 pt-4 text-[11px] leading-relaxed text-muted">
-        Shiny rates are community estimates aggregated by Bulbapedia from The Silph Road's
-        crowd-sourced research; Niantic has never published them. IV floors are datamined game
-        mechanics and are exact. All rates are editable at runtime — open the “rate” disclosure on
-        any source.
+        Medal names, descriptions and thresholds are in-game text. IV floors are datamined game
+        mechanics and are exact. Shiny rates are community estimates aggregated by Bulbapedia
+        from The Silph Road's crowd-sourced research — Niantic has never published them — and
+        every one is editable at runtime.
+        {mid.purifiedFraction > 0 && (
+          <>
+            {' '}
+            Purification is applied to {fmtPercent(mid.purifiedFraction, 0)} of your shadows,
+            from your Purifier medal.
+          </>
+        )}
       </footer>
     </div>
   );
