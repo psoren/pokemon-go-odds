@@ -1,30 +1,41 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-ink: #0b1020;
-  --color-panel: #131a2e;
-  --color-panel2: #1a2340;
-  --color-edge: #2a3557;
-  --color-muted: #8b97b8;
-  --color-shiny: #f6c453;
-  --color-hundo: #59c2ff;
-  --color-shundo: #c084fc;
+  /* Bright, map-like palette in the spirit of the game's own UI. */
+  --color-ink: #10243f;
+  --color-muted: #5d7691;
+  --color-panel: #ffffff;
+  --color-panel2: #f0f7fd;
+  --color-edge: #d5e5f3;
+
+  --color-shiny: #e2900a;
+  --color-hundo: #1a72d4;
+  --color-shundo: #8a3ad2;
+  --color-ball: #ee1c25;
 }
 
 html {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  color: #e6ebf7;
+  color: #10243f;
   background:
-    radial-gradient(1100px 600px at 15% -10%, #1d2851 0%, rgba(11, 16, 32, 0) 60%),
-    radial-gradient(900px 500px at 95% 0%, #2a1c46 0%, rgba(11, 16, 32, 0) 55%), #0b1020;
+    radial-gradient(1100px 620px at 10% -10%, #cbe8ff 0%, rgba(255, 255, 255, 0) 62%),
+    radial-gradient(900px 520px at 94% 2%, #d4f6e1 0%, rgba(255, 255, 255, 0) 58%),
+    linear-gradient(180deg, #e9f5ff 0%, #f5fbff 46%, #f6fdfa 100%);
   background-attachment: fixed;
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    ui-rounded, 'SF Pro Rounded', system-ui, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Headings lean bolder and tighter — closer to the game's chunky UI type. */
+h1,
+h2 {
+  letter-spacing: -0.02em;
 }
 
 /* Six-digit catch counts have no business next to a spinner. */
@@ -36,4 +47,9 @@ input[type='number']::-webkit-inner-spin-button {
 input[type='number'] {
   -moz-appearance: textfield;
   appearance: textfield;
+}
+
+/* Sprites are small pixel art; keep the pixels crisp when scaled up. */
+.sprite {
+  image-rendering: pixelated;
 }

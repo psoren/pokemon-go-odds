@@ -30,24 +30,24 @@ export function SourceTable({ model }: { model: ModelOutput }) {
                 <th className="py-2 px-2 text-right font-medium">Shiny rate</th>
                 <th className="py-2 px-2 text-right font-medium text-shiny">λ shiny</th>
                 <th className="py-2 px-2 text-right font-medium text-hundo">λ hundo</th>
-                <th className="py-2 px-2 text-right font-medium text-violet-300">
+                <th className="py-2 px-2 text-right font-medium text-violet-700">
                   λ hundo (purified)
                 </th>
                 <th className="py-2 pl-2 text-right font-medium text-shundo">λ shundo</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-edge/40">
+            <tbody className="divide-y divide-edge">
               {rows.map((r) => (
-                <tr key={r.def.id} className="text-slate-300">
+                <tr key={r.def.id} className="text-muted">
                   <td className="py-1.5 pr-3 text-left">
-                    <span className="text-slate-200">{r.def.label.replace(/^…of which /, '')}</span>
+                    <span className="text-ink">{r.def.label.replace(/^…of which /, '')}</span>
                     {r.def.kind === 'trade' && (
-                      <span className="ml-2 rounded border border-amber-500/40 px-1 text-[9px] uppercase text-amber-300">
+                      <span className="ml-2 rounded border border-amber-300 px-1 text-[9px] uppercase text-amber-700">
                         re-roll
                       </span>
                     )}
                     {r.def.kind === 'shadow' && (
-                      <span className="ml-2 rounded border border-violet-500/40 px-1 text-[9px] uppercase text-violet-300">
+                      <span className="ml-2 rounded border border-violet-300 px-1 text-[9px] uppercase text-violet-700">
                         no trade
                       </span>
                     )}
@@ -72,7 +72,7 @@ export function SourceTable({ model }: { model: ModelOutput }) {
                   </td>
                   <td
                     className={`py-1.5 px-2 text-right ${
-                      r.def.kind === 'shadow' ? 'text-violet-300/80' : 'text-edge'
+                      r.def.kind === 'shadow' ? 'text-violet-700' : 'text-slate-300'
                     }`}
                   >
                     {r.def.kind === 'shadow' ? fmtLambda(r.lambdaHundoPurified) : '—'}
@@ -80,7 +80,7 @@ export function SourceTable({ model }: { model: ModelOutput }) {
                   <td className="py-1.5 pl-2 text-right text-shundo">{fmtLambda(r.lambdaShundo)}</td>
                 </tr>
               ))}
-              <tr className="border-t-2 border-edge font-semibold text-slate-100">
+              <tr className="border-t-2 border-edge font-semibold text-ink">
                 <td className="py-2 pr-3 text-left">Total</td>
                 <td className="py-2 px-2 text-right">
                   {fmtInt(rows.reduce((a, r) => a + r.effectiveCount, 0))}
@@ -91,7 +91,7 @@ export function SourceTable({ model }: { model: ModelOutput }) {
                 <td className="py-2 px-2 text-right text-hundo">
                   {fmtLambda(rows.reduce((a, r) => a + r.lambdaHundoAsCaught, 0))}
                 </td>
-                <td className="py-2 px-2 text-right text-violet-200">
+                <td className="py-2 px-2 text-right text-violet-700">
                   {fmtLambda(
                     rows
                       .filter((r) => r.def.kind === 'shadow')

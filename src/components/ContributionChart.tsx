@@ -40,7 +40,7 @@ export function ContributionChart({ model }: { model: ModelOutput }) {
               type="button"
               onClick={() => setMetric(m.key)}
               className={`rounded-md px-2.5 py-1 text-[11px] transition ${
-                metric === m.key ? 'bg-panel2 text-slate-100' : 'text-muted hover:text-slate-200'
+                metric === m.key ? 'bg-panel2 text-ink' : 'text-muted hover:text-ink'
               }`}
             >
               {m.label}
@@ -55,16 +55,16 @@ export function ContributionChart({ model }: { model: ModelOutput }) {
         <div className="flex flex-col gap-2">
           {rows.map((r) => (
             <div key={r.def.id} className="grid grid-cols-[minmax(0,11rem)_1fr_auto] items-center gap-3">
-              <div className="truncate text-xs text-slate-300" title={r.label}>
+              <div className="truncate text-xs text-muted" title={r.label}>
                 {r.label}
               </div>
-              <div className="h-5 overflow-hidden rounded-md bg-ink/60">
+              <div className="h-5 overflow-hidden rounded-full bg-panel2">
                 <div
-                  className={`h-full rounded-md ${active.bar} transition-[width] duration-300`}
+                  className={`h-full rounded-full ${active.bar} transition-[width] duration-300`}
                   style={{ width: `${max > 0 ? Math.max(1.5, (r.value / max) * 100) : 0}%` }}
                 />
               </div>
-              <div className="w-28 text-right text-xs tabular-nums text-slate-300">
+              <div className="w-28 text-right text-xs tabular-nums text-muted">
                 {fmtLambda(r.value)}
                 <span className="ml-1.5 text-muted">{fmtPercent(r.value / total, 1)}</span>
               </div>

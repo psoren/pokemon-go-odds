@@ -7,9 +7,9 @@
 
 export function Pokeball({
   className = '',
-  top = '#e5484d',
-  bottom = '#f1f4fb',
-  line = '#0b1020',
+  top = '#ee1c25',
+  bottom = '#ffffff',
+  line = '#10243f',
 }: {
   className?: string;
   top?: string;
@@ -110,7 +110,7 @@ export function EggMark({ className = '' }: { className?: string }) {
         fill="currentColor"
         opacity="0.9"
       />
-      <path d="M20 38h24M24 46h16" stroke="#0b1020" strokeWidth="3.5" strokeLinecap="round" />
+      <path d="M20 38h24M24 46h16" stroke="#ffffff" strokeWidth="3.5" strokeLinecap="round" />
     </svg>
   );
 }
@@ -134,10 +134,10 @@ export function TradeArrows({ className = '' }: { className?: string }) {
 export function HeaderArt() {
   return (
     <div
-      className="pointer-events-none absolute -right-6 -top-8 hidden h-40 w-40 rotate-12 opacity-[0.10] lg:block"
+      className="pointer-events-none absolute -right-6 -top-10 hidden h-44 w-44 rotate-12 opacity-[0.18] lg:block"
       aria-hidden="true"
     >
-      <Pokeball top="#f6c453" bottom="#c084fc" line="#0b1020" className="h-full w-full" />
+      <Pokeball top="#ee1c25" bottom="#ffffff" line="#10243f" className="h-full w-full" />
     </div>
   );
 }
@@ -147,15 +147,15 @@ export function CategoryIcon({ category, className }: { category: string; classN
   const cls = className ?? 'h-4 w-4';
   switch (category) {
     case 'Catches':
-      return <Pokeball className={cls} top="#e5484d" bottom="#e8edf9" line="#0b1020" />;
+      return <Pokeball className={cls} />;
     case 'Raids':
-      return <RaidRing className={`${cls} text-amber-300`} />;
+      return <RaidRing className={`${cls} text-amber-700`} />;
     case 'Team GO Rocket':
-      return <ShadowFlame className={`${cls} text-violet-300`} />;
+      return <ShadowFlame className={`${cls} text-violet-700`} />;
     case 'Eggs':
-      return <EggMark className={`${cls} text-emerald-300`} />;
+      return <EggMark className={`${cls} text-emerald-600`} />;
     case 'Trades':
-      return <TradeArrows className={`${cls} text-sky-300`} />;
+      return <TradeArrows className={`${cls} text-sky-700`} />;
     default:
       return null;
   }

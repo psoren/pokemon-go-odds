@@ -57,9 +57,9 @@ export function SensitivityView({ bundle }: { bundle: ScenarioBundle }) {
               <th className="py-2 pl-2 text-right font-medium">P(0 shundos)</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-edge/40">
+          <tbody className="divide-y divide-edge">
             {SCENARIOS.map((s) => (
-              <tr key={s.key} className={s.key === 'mid' ? 'text-slate-200' : 'text-slate-400'}>
+              <tr key={s.key} className={s.key === 'mid' ? 'text-ink' : 'text-muted'}>
                 <td className="py-2 pr-3 text-left">{s.label}</td>
                 {METRICS.map((m) => (
                   <td key={m.key} className="py-2 px-2 text-right">
@@ -71,7 +71,7 @@ export function SensitivityView({ bundle }: { bundle: ScenarioBundle }) {
                 </td>
               </tr>
             ))}
-            <tr className="border-t-2 border-edge text-slate-100">
+            <tr className="border-t-2 border-edge text-ink">
               <td className="py-2 pr-3 text-left font-semibold">Spread (high ÷ low)</td>
               {METRICS.map((m) => {
                 const lo = bundle.low[m.key];
@@ -89,19 +89,19 @@ export function SensitivityView({ bundle }: { bundle: ScenarioBundle }) {
       </div>
 
       {spreadRows.length > 0 && (
-        <div className="mt-4 border-t border-edge/60 pt-3">
+        <div className="mt-4 border-t border-edge pt-3">
           <h3 className="text-[11px] font-medium uppercase tracking-wide text-muted">
             What drives the shundo uncertainty
           </h3>
           <div className="mt-2 flex flex-col gap-1.5">
             {spreadRows.map((r) => (
               <div key={r.def.id} className="grid grid-cols-[minmax(0,11rem)_1fr_auto] items-center gap-3">
-                <span className="truncate text-xs text-slate-300" title={r.def.label}>
+                <span className="truncate text-xs text-muted" title={r.def.label}>
                   {r.def.label.replace(/^…of which /, '')}
                 </span>
-                <span className="h-4 overflow-hidden rounded bg-ink/60">
+                <span className="h-4 overflow-hidden rounded-full bg-panel2">
                   <span
-                    className="block h-full rounded bg-amber-400/70"
+                    className="block h-full rounded bg-amber-400"
                     style={{ width: `${(r.spread / spreadRows[0].spread) * 100}%` }}
                   />
                 </span>

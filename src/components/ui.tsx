@@ -15,13 +15,13 @@ export function Panel({
   icon?: ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-edge/70 bg-panel/70 backdrop-blur-sm shadow-lg shadow-black/20">
+    <section className="overflow-hidden rounded-3xl border border-edge bg-panel/90 shadow-[0_10px_30px_-12px_rgba(16,36,63,0.18)] backdrop-blur-sm">
       {title && (
-        <header className="flex items-start justify-between gap-4 border-b border-edge/60 px-5 py-4">
+        <header className="flex items-start justify-between gap-4 border-b border-edge bg-gradient-to-r from-sky-50/80 to-transparent px-5 py-4">
           <div className="flex items-start gap-2.5">
             {icon && <span className="mt-0.5 shrink-0">{icon}</span>}
             <div>
-              <h2 className="text-base font-semibold tracking-tight text-slate-100">{title}</h2>
+              <h2 className="text-base font-bold tracking-tight text-ink">{title}</h2>
               {subtitle && <p className="mt-1 text-xs leading-relaxed text-muted">{subtitle}</p>}
             </div>
           </div>
@@ -55,13 +55,13 @@ export function Disclosure({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="group flex items-center justify-between gap-3 rounded-2xl border border-edge/70 bg-panel/50 px-5 py-3.5 text-left transition hover:border-sky-400/50 hover:bg-panel/80"
+        className="group flex items-center justify-between gap-3 rounded-2xl border border-edge bg-panel px-5 py-3.5 text-left transition hover:border-sky-300 hover:bg-panel"
       >
         <span>
-          <span className="text-sm font-medium text-slate-200">{label}</span>
+          <span className="text-sm font-medium text-ink">{label}</span>
           {hint && <span className="mt-0.5 block text-xs text-muted">{hint}</span>}
         </span>
-        <span className="shrink-0 text-xs text-muted transition group-hover:text-sky-200">
+        <span className="shrink-0 text-xs text-muted transition group-hover:text-sky-700">
           {open ? 'hide ▲' : 'show ▼'}
         </span>
       </button>
@@ -80,12 +80,12 @@ export function Callout({
   children: ReactNode;
 }) {
   const tones = {
-    info: 'border-sky-500/40 bg-sky-500/10 text-sky-100',
-    warn: 'border-amber-500/40 bg-amber-500/10 text-amber-100',
-    error: 'border-rose-500/50 bg-rose-500/10 text-rose-100',
+    info: 'border-sky-200 bg-sky-50 text-sky-900',
+    warn: 'border-amber-200 bg-amber-50 text-amber-900',
+    error: 'border-rose-200 bg-rose-50 text-rose-900',
   } as const;
   return (
-    <div className={`rounded-xl border px-4 py-3 text-xs leading-relaxed ${tones[tone]}`}>
+    <div className={`rounded-2xl border px-4 py-3 text-xs leading-relaxed ${tones[tone]}`}>
       {title && <div className="mb-1 font-semibold tracking-tight">{title}</div>}
       {children}
     </div>
@@ -93,9 +93,9 @@ export function Callout({
 }
 
 const CONFIDENCE_STYLE: Record<Confidence, string> = {
-  high: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200',
-  medium: 'border-amber-500/40 bg-amber-500/10 text-amber-200',
-  low: 'border-rose-500/40 bg-rose-500/10 text-rose-200',
+  high: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+  medium: 'border-amber-200 bg-amber-50 text-amber-800',
+  low: 'border-rose-200 bg-rose-50 text-rose-700',
 };
 
 export function ConfidenceBadge({ level }: { level: Confidence }) {
@@ -146,7 +146,7 @@ export function NumberField({
         // the input would sit there displaying "-5".
         onChange(Math.max(0, n));
       }}
-      className={`rounded-lg border border-edge bg-ink/70 px-3 py-1.5 text-right text-sm tabular-nums text-slate-100 outline-none transition focus:border-sky-400/70 focus:ring-2 focus:ring-sky-400/20 ${className}`}
+      className={`rounded-xl border border-edge bg-white px-3 py-1.5 text-right text-sm font-semibold tabular-nums text-ink outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-200 ${className}`}
     />
   );
 }

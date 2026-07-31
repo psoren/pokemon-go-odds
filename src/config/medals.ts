@@ -102,8 +102,8 @@ export const TIERS = ['bronze', 'silver', 'gold', 'platinum'] as const;
 export type Tier = (typeof TIERS)[number];
 
 export const TIER_STYLE: Record<Tier, string> = {
-  bronze: 'border-amber-700/60 bg-amber-700/15 text-amber-300/90',
-  silver: 'border-slate-400/50 bg-slate-400/15 text-slate-300',
-  gold: 'border-yellow-500/50 bg-yellow-500/15 text-yellow-300',
-  platinum: 'border-cyan-300/50 bg-cyan-300/15 text-cyan-200',
+  bronze: 'border-amber-300 bg-amber-100 text-amber-800',
+  silver: 'border-slate-300 bg-slate-100 text-slate-600',
+  gold: 'border-yellow-300 bg-yellow-100 text-yellow-800',
+  platinum: 'border-cyan-300 bg-cyan-100 text-cyan-800',
 };

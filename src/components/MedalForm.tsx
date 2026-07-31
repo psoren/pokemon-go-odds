@@ -58,7 +58,7 @@ export function MedalForm({ inputs, setInputs, issues }: Props) {
             title={category}
             icon={<CategoryIcon category={category} className="h-5 w-5" />}
           >
-            <div className="flex flex-col divide-y divide-edge/40">
+            <div className="flex flex-col divide-y divide-edge">
               {rows.map((def) => (
                 <MedalRow
                   key={def.id}
@@ -80,7 +80,7 @@ export function MedalForm({ inputs, setInputs, issues }: Props) {
             setInputs(() => emptyInputs());
           }
         }}
-        className="self-start rounded-lg border border-edge px-3 py-1.5 text-xs text-muted transition hover:border-rose-500/50 hover:text-rose-200"
+        className="self-start rounded-lg border border-edge px-3 py-1.5 text-xs text-muted transition hover:border-rose-300 hover:text-rose-700"
       >
         Reset everything
       </button>
@@ -109,7 +109,7 @@ function MedalRow({
     <div className="py-3">
       <div className="flex items-center gap-3">
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-medium leading-snug text-slate-100">{medal.name}</div>
+          <div className="text-sm font-medium leading-snug text-ink">{medal.name}</div>
           <div className="mt-0.5 text-[11px] leading-snug text-muted">
             {medal.description.replace('___', 'N')}
           </div>
@@ -128,8 +128,8 @@ function MedalRow({
           aria-expanded={open}
           className={`shrink-0 rounded-lg border px-2 py-1.5 text-[11px] transition ${
             isOverridden
-              ? 'border-violet-500/60 bg-violet-500/10 text-violet-200'
-              : 'border-edge text-muted hover:border-sky-400/50 hover:text-sky-200'
+              ? 'border-violet-300 bg-violet-50 text-violet-700'
+              : 'border-edge text-muted hover:border-sky-300 hover:text-sky-700'
           }`}
           title="Medal tiers, rate estimates and IV floor"
         >
@@ -138,14 +138,14 @@ function MedalRow({
       </div>
 
       {open && (
-        <div className="mt-3 rounded-xl border border-edge/70 bg-panel2/60 p-3">
+        <div className="mt-3 rounded-xl border border-edge bg-panel2 p-3">
           <div className="mb-2 flex items-center gap-2">
             <ConfidenceBadge level={def.confidence} />
             <span className="text-[11px] text-muted">{def.kind} source</span>
           </div>
 
           <p className="text-[11px] leading-relaxed text-muted">
-            <span className="text-slate-300">{def.label}</span>
+            <span className="text-muted">{def.label}</span>
             {def.kind !== 'reference' && (
               <>
                 {' '}
@@ -220,8 +220,8 @@ function MedalRow({
             </label>
           )}
 
-          <p className="mt-3 border-t border-edge/60 pt-2 text-[10px] leading-relaxed text-muted">
-            <span className="font-medium text-slate-400">Source:</span> {def.citation}
+          <p className="mt-3 border-t border-edge pt-2 text-[10px] leading-relaxed text-muted">
+            <span className="font-medium text-muted">Source:</span> {def.citation}
           </p>
 
           {isOverridden && (
@@ -231,7 +231,7 @@ function MedalRow({
                 SCENARIOS.forEach((s) => setOverride(def.id, s, undefined));
                 setOverride(def.id, 'ivFloor', undefined);
               }}
-              className="mt-2 text-[11px] text-muted underline underline-offset-2 hover:text-slate-200"
+              className="mt-2 text-[11px] text-muted underline underline-offset-2 hover:text-ink"
             >
               Reset to defaults
             </button>

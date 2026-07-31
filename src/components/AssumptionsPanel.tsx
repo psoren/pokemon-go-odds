@@ -49,10 +49,10 @@ export function AssumptionsPanel({
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="shrink-0 rounded-lg border border-edge px-2.5 py-1 text-[11px] text-muted transition hover:border-sky-400/50 hover:text-sky-200"
+          className="shrink-0 rounded-lg border border-edge px-2.5 py-1 text-[11px] text-muted transition hover:border-sky-300 hover:text-sky-700"
         >
           {edited > 0 && (
-            <span className="mr-1 text-violet-300">{edited} edited</span>
+            <span className="mr-1 text-violet-700">{edited} edited</span>
           )}
           {open ? 'hide ▲' : 'show ▼'}
         </button>
@@ -61,12 +61,12 @@ export function AssumptionsPanel({
       {!open ? (
         <p className="text-xs leading-relaxed text-muted">
           {FRACTION_SOURCES.length} values are being assumed from your medals — including{' '}
-          <span className="text-slate-300">
+          <span className="text-muted">
             {fmtInt(model.sources.find((r) => r.def.id === 'trades-shiny')?.rawCount ?? 0)} shiny
             trades
           </span>{' '}
           and{' '}
-          <span className="text-slate-300">
+          <span className="text-muted">
             {fmtInt(model.sources.find((r) => r.def.id === 'community-day')?.rawCount ?? 0)}{' '}
             Community Day catches
           </span>
@@ -90,18 +90,18 @@ export function AssumptionsPanel({
               <div
                 key={def.id}
                 className={`rounded-xl border p-3 ${
-                  isEdited ? 'border-violet-500/50 bg-violet-500/5' : 'border-edge/70 bg-panel2/40'
+                  isEdited ? 'border-violet-300 bg-violet-50' : 'border-edge bg-panel2'
                 }`}
               >
                 <div className="flex items-baseline justify-between gap-3">
-                  <span className="text-sm text-slate-200">{def.label}</span>
-                  <span className="shrink-0 text-xs tabular-nums text-slate-300">
+                  <span className="text-sm text-ink">{def.label}</span>
+                  <span className="shrink-0 text-xs tabular-nums text-muted">
                     {fmtInt(row?.rawCount ?? 0)}
                   </span>
                 </div>
                 <p className="mt-1 text-[11px] text-muted">
                   as a share of{' '}
-                  <span className="text-slate-400">
+                  <span className="text-muted">
                     {parent.medal?.name ?? parent.label}
                   </span>{' '}
                   ({fmtInt(parentRow?.rawCount ?? 0)})
@@ -141,7 +141,7 @@ export function AssumptionsPanel({
                         return { ...prev, assumptions };
                       })
                     }
-                    className="mt-2 text-[11px] text-muted underline underline-offset-2 hover:text-slate-200"
+                    className="mt-2 text-[11px] text-muted underline underline-offset-2 hover:text-ink"
                   >
                     Reset to default (
                     {fmtPercent(def.derivedFrom!.fraction.mid, 1)})

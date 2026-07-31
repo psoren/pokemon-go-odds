@@ -114,7 +114,7 @@ export function luckFor(
 export function LuckLine({ luck, metric }: { luck: LuckRange; metric?: Metric }) {
   if (luck.outOfBand) {
     return (
-      <span className="text-rose-300">
+      <span className="text-rose-700">
         outside the 1st–99th percentile — likely a rate problem
       </span>
     );
@@ -123,7 +123,7 @@ export function LuckLine({ luck, metric }: { luck: LuckRange; metric?: Metric })
     // Deliberately no point estimate: at this width it would be invented.
     const useless = luck.percentileLow < 2 && luck.percentileHigh > 98;
     return (
-      <span className="text-amber-200">
+      <span className="text-amber-700">
         {useless ? (
           <>the rate estimates can&rsquo;t place this at all</>
         ) : (
@@ -151,7 +151,7 @@ export function LuckLine({ luck, metric }: { luck: LuckRange; metric?: Metric })
           ? 'lucky'
           : 'about par';
   return (
-    <span className="text-slate-300">
+    <span className="text-muted">
       {ordinal(luck.percentileLow)}–{ordinal(luck.percentileHigh)} percentile
       <span className="ml-1.5 text-muted">{verdict}</span>
     </span>
@@ -228,13 +228,13 @@ function LuckDetail({
   const ratioKnown = Number.isFinite(ratio) && ratio > 0;
 
   return (
-    <div className="rounded-xl border border-edge/70 bg-panel2/40 p-3">
+    <div className="rounded-xl border border-edge bg-panel2 p-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <span className={`text-sm font-medium ${accent}`}>
           {luck.observed.toLocaleString()} {label.toLowerCase()}
         </span>
         <span className="text-[11px] text-muted">
-          model predicted <span className="tabular-nums text-slate-300">{fmtLambda(predicted)}</span>
+          model predicted <span className="tabular-nums text-muted">{fmtLambda(predicted)}</span>
         </span>
       </div>
 
@@ -243,12 +243,12 @@ function LuckDetail({
       </div>
 
       {(luck.tooUncertain || luck.outOfBand) && drivers.length > 0 && (
-        <p className="mt-2 rounded-lg border border-sky-400/40 bg-sky-400/10 px-2.5 py-1.5 text-[11px] leading-relaxed text-sky-100">
+        <p className="mt-2 rounded-lg border border-sky-300 bg-sky-50 px-2.5 py-1.5 text-[11px] leading-relaxed text-sky-700">
           <span className="font-medium">Where that width comes from:</span>{' '}
           {drivers.slice(0, 3).map((d, i) => (
             <span key={d.label}>
               {i > 0 && ', '}
-              {d.label} <span className="text-sky-300/80">{Math.round(d.share * 100)}%</span>
+              {d.label} <span className="text-sky-700">{Math.round(d.share * 100)}%</span>
             </span>
           ))}
           .{' '}
@@ -284,7 +284,7 @@ function LuckDetail({
       ) : (
         <>
           {luck.tooUncertain && (
-            <p className="mt-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-[11px] leading-relaxed text-amber-100">
+            <p className="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1.5 text-[11px] leading-relaxed text-amber-700">
               The rate estimates alone move this percentile by{' '}
               {Math.round(luck.spread)} points — more than the{' '}
               {UNCERTAIN_SPREAD_POINTS}-point limit — so no point estimate is shown. The honest
@@ -293,15 +293,15 @@ function LuckDetail({
           )}
 
           <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] tabular-nums">
-            <div className="rounded-lg bg-ink/40 px-2 py-1.5">
+            <div className="rounded-lg bg-panel2 px-2 py-1.5">
               <div className="text-muted">P(you have this many or fewer)</div>
-              <div className="mt-0.5 text-slate-200">
+              <div className="mt-0.5 text-ink">
                 {fmtPercent(luck.byScenario.mid.pAtMost, 1)}
               </div>
             </div>
-            <div className="rounded-lg bg-ink/40 px-2 py-1.5">
+            <div className="rounded-lg bg-panel2 px-2 py-1.5">
               <div className="text-muted">P(this many or more)</div>
-              <div className="mt-0.5 text-slate-200">
+              <div className="mt-0.5 text-ink">
                 {fmtPercent(luck.byScenario.mid.pAtLeast, 1)}
               </div>
             </div>
@@ -310,12 +310,12 @@ function LuckDetail({
       )}
 
       {ratioKnown && (
-        <p className="mt-2 border-t border-edge/60 pt-2 text-[11px] leading-relaxed text-muted">
-          <span className="text-slate-400">Inverse check:</span> your count would be the exact
+        <p className="mt-2 border-t border-edge pt-2 text-[11px] leading-relaxed text-muted">
+          <span className="text-muted">Inverse check:</span> your count would be the exact
           median if the model expected{' '}
-          <span className="tabular-nums text-slate-300">{fmtLambda(luck.impliedLambda)}</span>{' '}
+          <span className="tabular-nums text-muted">{fmtLambda(luck.impliedLambda)}</span>{' '}
           instead of {fmtLambda(predicted)} — a{' '}
-          <span className="text-slate-300">{ratio.toFixed(2)}×</span> difference.
+          <span className="text-muted">{ratio.toFixed(2)}×</span> difference.
           {metric === 'shiny' &&
             (() => {
               const rates = blendedRates(luck.byScenario.mid.lambda, ratio, encounters);
@@ -324,8 +324,8 @@ function LuckDetail({
                 <>
                   {' '}
                   If your medal counts are right, your true blended shiny rate would have to be{' '}
-                  <span className="text-slate-300">{rates.implied}</span> rather than the
-                  configured <span className="text-slate-300">{rates.configured}</span>.
+                  <span className="text-muted">{rates.implied}</span> rather than the
+                  configured <span className="text-muted">{rates.configured}</span>.
                   Comparing those two is the real diagnostic — it tells you whether the model or
                   your luck is the outlier.
                 </>
@@ -338,7 +338,7 @@ function LuckDetail({
               {ratio < 0.95 && (
                 <>
                   {' '}
-                  <span className="text-slate-300">
+                  <span className="text-muted">
                     Below 1.00 is expected, and does not mean you were unlucky.
                   </span>{' '}
                   The model counts hundos you <em>encountered</em>; you can only count the ones

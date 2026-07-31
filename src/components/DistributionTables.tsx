@@ -57,11 +57,11 @@ function DistributionTable({
   dist: Distribution;
 }) {
   return (
-    <div className="rounded-xl border border-edge/70 bg-panel2/40 p-3">
+    <div className="rounded-xl border border-edge bg-panel2 p-3">
       <div className="mb-2 flex items-baseline justify-between">
         <span className={`text-sm font-semibold ${accent}`}>{title}</span>
         <span className="text-[11px] text-muted">
-          λ = <span className="tabular-nums text-slate-300">{fmtLambda(dist.lambda)}</span>
+          λ = <span className="tabular-nums text-muted">{fmtLambda(dist.lambda)}</span>
         </span>
       </div>
       <table className="w-full text-[11px] tabular-nums">
@@ -74,16 +74,16 @@ function DistributionTable({
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-edge/40">
+        <tbody className="divide-y divide-edge">
           {Array.from({ length: MAX_K + 1 }, (_, k) => {
             const delta = Math.abs(dist.poisson[k] - dist.exact[k]);
             return (
               <tr key={k}>
-                <td className="py-1 text-left text-slate-400">{k}</td>
+                <td className="py-1 text-left text-muted">{k}</td>
                 <td className="py-1 text-right text-muted">{fmtPercent(dist.poisson[k])}</td>
                 <td
                   className={`py-1 text-right ${
-                    delta > DIVERGENCE_THRESHOLD ? 'text-amber-300' : 'text-slate-200'
+                    delta > DIVERGENCE_THRESHOLD ? 'text-amber-700' : 'text-ink'
                   }`}
                 >
                   {fmtPercent(dist.exact[k])}
@@ -92,11 +92,11 @@ function DistributionTable({
             );
           })}
           <tr className="border-t border-edge">
-            <td className="py-1 text-left text-slate-400">7+</td>
+            <td className="py-1 text-left text-muted">7+</td>
             <td className="py-1 text-right text-muted">
               {fmtPercent(Math.max(0, 1 - dist.poisson.reduce((a, b) => a + b, 0)))}
             </td>
-            <td className="py-1 text-right text-slate-200">{fmtPercent(dist.tail)}</td>
+            <td className="py-1 text-right text-ink">{fmtPercent(dist.tail)}</td>
           </tr>
         </tbody>
       </table>

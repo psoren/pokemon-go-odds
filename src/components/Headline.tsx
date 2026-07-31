@@ -23,7 +23,7 @@ const CARDS: {
     label: 'Shinies',
     blurb: 'Different colour, same stats',
     accent: 'text-shiny',
-    glow: 'from-amber-400/20',
+    glow: 'from-amber-300/45 via-amber-100/30',
     art: <Sparkle className="h-full w-full text-shiny" />,
   },
   {
@@ -32,7 +32,7 @@ const CARDS: {
     label: 'Hundos',
     blurb: 'Perfect 15/15/15 stats',
     accent: 'text-hundo',
-    glow: 'from-sky-400/20',
+    glow: 'from-sky-300/45 via-sky-100/30',
     art: <PerfectIV className="h-full w-full text-hundo" />,
   },
   {
@@ -41,7 +41,7 @@ const CARDS: {
     label: 'Shundos',
     blurb: 'Shiny and perfect at once',
     accent: 'text-shundo',
-    glow: 'from-violet-400/25',
+    glow: 'from-violet-300/45 via-violet-100/30',
     art: <ShundoMark className="h-full w-full text-shundo" />,
   },
 ];
@@ -77,22 +77,22 @@ export function Headline({
         return (
           <div
             key={card.key}
-            className="relative overflow-hidden rounded-2xl border border-edge/70 bg-panel/70 px-5 py-4 shadow-lg shadow-black/20"
+            className="relative overflow-hidden rounded-3xl border border-edge bg-panel/90 px-5 py-4 shadow-[0_12px_32px_-14px_rgba(16,36,63,0.28)] backdrop-blur-sm"
           >
             <div
               className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${card.glow} to-transparent`}
             />
-            <div className="pointer-events-none absolute -right-4 -top-4 h-24 w-24 opacity-[0.16]">
+            <div className="pointer-events-none absolute -right-5 -top-5 h-28 w-28 rotate-12 opacity-[0.22]">
               {card.art}
             </div>
             <div className="relative">
               <div className="flex items-center gap-2">
                 <span className="h-4 w-4">{card.art}</span>
-                <span className="text-[11px] font-medium uppercase tracking-wider text-muted">
+                <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-muted">
                   {card.label}
                 </span>
               </div>
-              <div className={`mt-1.5 text-3xl font-semibold tabular-nums ${card.accent}`}>
+              <div className={`mt-1.5 text-4xl font-extrabold tabular-nums ${card.accent}`}>
                 {fmtRange(lo, hi)}
               </div>
               <div className="mt-1 text-xs text-muted">
@@ -103,11 +103,11 @@ export function Headline({
                 ) : (
                   <>
                     best guess{' '}
-                    <span className="tabular-nums text-slate-300">{fmtLambda(mid)}</span>
+                    <span className="tabular-nums text-muted">{fmtLambda(mid)}</span>
                   </>
                 )}
               </div>
-              <div className="mt-2 border-t border-edge/50 pt-2">
+              <div className="mt-2 border-t border-edge pt-2">
                 <label className="flex items-center gap-2">
                   <span className="text-[11px] whitespace-nowrap text-muted">I have</span>
                   <NumberField

@@ -29,8 +29,8 @@ export default function App() {
       <header className="relative mb-6 overflow-hidden">
         <HeaderArt />
         <div className="relative flex items-center gap-3">
-          <Pokeball className="h-9 w-9 shrink-0" top="#f6c453" bottom="#e8edf9" />
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-50 sm:text-3xl">
+          <Pokeball className="h-11 w-11 shrink-0 drop-shadow-sm" top="#ee1c25" bottom="#ffffff" line="#10243f" />
+          <h1 className="text-2xl font-extrabold tracking-tight text-ink sm:text-4xl">
             Pokémon GO rarity calculator
           </h1>
         </div>
@@ -81,12 +81,12 @@ export default function App() {
             were shiny-locked at the time, and the Champion, Hero and Pokémon Ranger medals count
             battles won and tasks completed rather than Pokémon caught. The full reasoning — and
             everywhere the model is knowingly approximate — is in{' '}
-            <code className="text-slate-300">MODEL.md</code>.
+            <code className="text-muted">MODEL.md</code>.
           </Callout>
         </div>
       </div>
 
-      <footer className="mt-10 border-t border-edge/60 pt-4 text-[11px] leading-relaxed text-muted">
+      <footer className="mt-10 border-t border-edge pt-4 text-[11px] leading-relaxed text-muted">
         Medal names, descriptions and thresholds are in-game text. IV floors are datamined game
         mechanics and are exact. Shiny rates are community estimates aggregated by Bulbapedia
         from The Silph Road's research, and every one is editable at runtime.

@@ -89,20 +89,20 @@ export function CommunityDayPicker({
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="shrink-0 rounded-lg border border-edge px-2.5 py-1 text-[11px] text-muted transition hover:border-sky-400/50 hover:text-sky-200"
+          className="shrink-0 rounded-lg border border-edge px-2.5 py-1 text-[11px] text-muted transition hover:border-sky-300 hover:text-sky-700"
         >
           {open ? 'hide ▲' : `pick them ▼`}
         </button>
       }
     >
       <p className="text-xs leading-relaxed text-muted">
-        <span className="text-slate-200">
+        <span className="text-ink">
           {attended} of {COMMUNITY_DAYS.length}
         </span>{' '}
         events selected →{' '}
         <span className="text-shiny">{fmtInt(catches)} featured-species catches</span>.{' '}
         {attended === 0 && (
-          <span className="text-amber-200">
+          <span className="text-amber-700">
             Nothing selected yet, so the model is assuming you have never played one — which
             will understate your shinies. Tick them off below.
           </span>
@@ -111,7 +111,7 @@ export function CommunityDayPicker({
 
       {open && (
         <div className="mt-4 flex flex-col gap-4">
-          <div className="rounded-xl border border-edge/70 bg-panel2/40 p-3">
+          <div className="rounded-xl border border-edge bg-panel2 p-3">
             <div className="text-[11px] uppercase tracking-wide text-muted">
               Catches per event you attended
             </div>
@@ -137,14 +137,14 @@ export function CommunityDayPicker({
             <button
               type="button"
               onClick={() => setSelected(new Set(COMMUNITY_DAYS.map((e) => e.id)))}
-              className="rounded-lg border border-edge px-2.5 py-1 text-[11px] text-muted transition hover:border-sky-400/50 hover:text-sky-200"
+              className="rounded-lg border border-edge px-2.5 py-1 text-[11px] text-muted transition hover:border-sky-300 hover:text-sky-700"
             >
               Select all
             </button>
             <button
               type="button"
               onClick={() => setSelected(new Set())}
-              className="rounded-lg border border-edge px-2.5 py-1 text-[11px] text-muted transition hover:border-rose-500/50 hover:text-rose-200"
+              className="rounded-lg border border-edge px-2.5 py-1 text-[11px] text-muted transition hover:border-rose-300 hover:text-rose-700"
             >
               Clear all
             </button>
@@ -166,9 +166,9 @@ export function CommunityDayPicker({
             const events = eventsInYear(year);
             const chosen = events.filter((e) => selected.has(e.id)).length;
             return (
-              <div key={year} className="rounded-xl border border-edge/70 bg-panel2/30 p-3">
+              <div key={year} className="rounded-xl border border-edge bg-panel2 p-3">
                 <div className="mb-2 flex items-center justify-between gap-3">
-                  <span className="text-sm font-medium text-slate-200">
+                  <span className="text-sm font-medium text-ink">
                     {year}
                     <span className="ml-2 text-[11px] font-normal text-muted">
                       {chosen}/{events.length}
@@ -178,20 +178,20 @@ export function CommunityDayPicker({
                     <button
                       type="button"
                       onClick={() => toggleYear(year, true)}
-                      className="rounded border border-edge px-1.5 py-0.5 text-[10px] text-muted transition hover:border-sky-400/50 hover:text-sky-200"
+                      className="rounded border border-edge px-1.5 py-0.5 text-[10px] text-muted transition hover:border-sky-300 hover:text-sky-700"
                     >
                       all
                     </button>
                     <button
                       type="button"
                       onClick={() => toggleYear(year, false)}
-                      className="rounded border border-edge px-1.5 py-0.5 text-[10px] text-muted transition hover:border-rose-500/50 hover:text-rose-200"
+                      className="rounded border border-edge px-1.5 py-0.5 text-[10px] text-muted transition hover:border-rose-300 hover:text-rose-700"
                     >
                       none
                     </button>
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-4">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
                   {events.map((e) => {
                     const on = selected.has(e.id);
                     return (
@@ -200,28 +200,27 @@ export function CommunityDayPicker({
                         type="button"
                         onClick={() => toggle(e.id)}
                         aria-pressed={on}
-                        className={`relative flex items-center gap-1.5 rounded-lg border py-1 pl-1 pr-2 text-left text-[11px] leading-tight transition ${
+                        className={`relative flex items-center gap-2 rounded-2xl border py-1.5 pl-1.5 pr-2 text-left text-xs leading-tight transition hover:-translate-y-0.5 ${
                           on
-                            ? 'border-shiny/60 bg-shiny/10 text-slate-100'
-                            : 'border-edge/70 text-muted hover:border-slate-500 hover:text-slate-300'
+                            ? 'border-shiny bg-amber-50 text-ink shadow-sm'
+                            : 'border-edge text-muted hover:border-slate-400 hover:text-muted'
                         }`}
                       >
                         {e.dex !== null ? (
                           <img
                             src={spriteUrl(e.dex)}
                             alt=""
-                            width={40}
-                            height={40}
+                            width={64}
+                            height={64}
                             loading="lazy"
                             aria-hidden="true"
-                            className={`size-10 shrink-0 transition ${
-                              on ? '' : 'opacity-60 grayscale'
+                            className={`sprite size-16 shrink-0 transition ${
+                              on ? 'drop-shadow-sm' : 'opacity-45 grayscale'
                             }`}
-                            style={{ imageRendering: 'pixelated' }}
                           />
                         ) : (
                           <Pokeball
-                            className={`size-7 shrink-0 ${on ? '' : 'opacity-50 grayscale'}`}
+                            className={`size-12 shrink-0 ${on ? '' : 'opacity-45 grayscale'}`}
                             top="#f6c453"
                             bottom="#e8edf9"
                           />
