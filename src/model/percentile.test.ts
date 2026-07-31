@@ -244,3 +244,40 @@ describe('ordinal', () => {
     expect(ordinal(100)).toBe('100th');
   });
 });
+
+describe('driver attribution', () => {
+  it('is exported from the UI layer and shares sum to 1', async () => {
+    const { driversFor } = await import('../components/LuckPanel');
+    const { runAllScenarios, emptyInputs } = await import('./forward');
+    const bundle = runAllScenarios({
+      ...emptyInputs(),
+      counts: { collector: 95_000, research: 5_400, 'raid-legend': 664, eggs: 2_462 },
+    });
+    const drivers = driversFor(bundle, 'shiny');
+    expect(drivers.length).toBeGreaterThan(0);
+    expect(drivers.reduce((a, d) => a + d.share, 0)).toBeCloseTo(1, 9);
+    // Sorted largest first.
+    for (let i = 1; i < drivers.length; i++) {
+      expect(drivers[i - 1].share).toBeGreaterThanOrEqual(drivers[i].share);
+    }
+  });
+
+  it('blames the derived assumptions for the shiny width, not the medals', () => {
+    // Community Day and event share are guesses multiplied by rate bands, so
+    // they dominate — that is the actionable thing to tell the user.
+    return import('../components/LuckPanel').then(async ({ driversFor }) => {
+      const { runAllScenarios, emptyInputs } = await import('./forward');
+      const bundle = runAllScenarios({
+        ...emptyInputs(),
+        counts: { collector: 95_000, research: 5_400 },
+      });
+      expect(driversFor(bundle, 'shiny')[0].isAssumption).toBe(true);
+    });
+  });
+
+  it('returns an empty list when there is nothing to attribute', async () => {
+    const { driversFor } = await import('../components/LuckPanel');
+    const { runAllScenarios, emptyInputs } = await import('./forward');
+    expect(driversFor(runAllScenarios(emptyInputs()), 'shiny')).toEqual([]);
+  });
+});

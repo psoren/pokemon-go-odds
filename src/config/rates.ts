@@ -114,7 +114,7 @@ export const SOURCES: SourceDef[] = [
       'Counts every Pokémon you have ever caught — including raid, research and ' +
       'Team GO Rocket catches, which is why those are subtracted from it. What is ' +
       'left over is treated as ordinary unboosted wild catches.',
-    citation: `Shiny rate 1/512 base. ${BULBAPEDIA_SHINY} Older Silph Road estimates put it nearer 1/450–1/500, hence the band. Floor 0/0/0 for wild catches: ${DITTOBASE_FLOORS}`,
+    citation: `Shiny rate 1/512 base. ${BULBAPEDIA_SHINY} Silph Road's own estimates cluster around 1/450–1/512, so the MEASUREMENT uncertainty is much tighter than the band used here. The band is deliberately wider because it is also standing in for the shiny-ELIGIBLE share of your catches, which the model does not track separately: a catch of a species that had no shiny release at the time is a trial with p = 0, not p = 1/512, and on a long-lived account those are a large fraction of the total. See MODEL.md §4.1. Floor 0/0/0 for wild catches: ${DITTOBASE_FLOORS}`,
   },
   {
     id: 'wild-weather',

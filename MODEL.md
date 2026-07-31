@@ -320,10 +320,16 @@ expected shinies from wild catches, probably substantially.** If your observed
 shiny count comes in far below the model's prediction, this is the first thing
 to suspect — not bad luck.
 
-The honest fix is to override the wild shiny rate downward to a *blended*
-effective rate that accounts for your eligible fraction. If roughly half your
-lifetime catches were of shiny-eligible species at the time, override the wild
-rate to about 1 in 1000.
+**Where this is hiding.** The wild rate band is 1/700 · 1/512 · 1/400, which is
+much wider than the measurement uncertainty warrants — Silph Road's estimates
+cluster around 1/450–1/512. The extra width is standing in for the eligible
+share. That is a defensible way to carry the uncertainty, but it is worth being
+explicit that the band is doing two jobs, only one of which is a "rate".
+
+The honest fix if you want a sharper answer is to override the wild shiny rate
+downward to a *blended* effective rate that accounts for your eligible fraction.
+If roughly half your lifetime catches were of shiny-eligible species at the
+time, override the wild rate to about 1 in 1000 and narrow the band around it.
 
 ### 4.2 Your event mix is not the community average
 

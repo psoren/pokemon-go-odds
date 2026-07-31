@@ -40,6 +40,51 @@ const METRICS: {
   },
 ];
 
+/**
+ * Which sources are responsible for the width of a prediction.
+ *
+ * When the app refuses to place an observation, "too uncertain" is a dead end
+ * unless it also says WHICH assumption to go and tighten. This ranks each
+ * source by how much of the low-to-high spread it contributes.
+ */
+export interface Driver {
+  label: string;
+  share: number;
+  isAssumption: boolean;
+}
+
+const LAMBDA_KEY: Record<Metric, 'lambdaShiny' | 'lambdaHundo' | 'lambdaShundo'> = {
+  shiny: 'lambdaShiny',
+  hundo: 'lambdaHundo',
+  shundo: 'lambdaShundo',
+};
+
+export function driversFor(bundle: ScenarioBundle, metric: Metric): Driver[] {
+  const key = LAMBDA_KEY[metric];
+  const rows = bundle.mid.sources
+    .map((m) => {
+      const lo = bundle.low.sources.find((s) => s.def.id === m.def.id)!;
+      const hi = bundle.high.sources.find((s) => s.def.id === m.def.id)!;
+      return {
+        label: m.def.label,
+        // Sources can move either way, since the derived splits eat into their
+        // parent's remainder as they grow. Width is what matters, not sign.
+        spread: Math.abs(hi[key] - lo[key]),
+        isAssumption: m.def.derivedFrom !== undefined,
+      };
+    })
+    .filter((r) => r.spread > 0)
+    .sort((a, b) => b.spread - a.spread);
+
+  const total = rows.reduce((a, r) => a + r.spread, 0);
+  if (!(total > 0)) return [];
+  return rows.map((r) => ({
+    label: r.label,
+    share: r.spread / total,
+    isAssumption: r.isAssumption,
+  }));
+}
+
 /** Build the luck assessment for one metric, or null if nothing observed. */
 export function luckFor(
   bundle: ScenarioBundle,
@@ -150,6 +195,7 @@ export function LuckPanel({
                 predicted={bundle.mid[m.lambdaKey]}
                 metric={m.key}
                 encounters={bundle.mid.trials[m.key].reduce((a, t) => a + t.n, 0)}
+                drivers={driversFor(bundle, m.key)}
               />
             );
           })}
@@ -166,6 +212,7 @@ function LuckDetail({
   predicted,
   metric,
   encounters,
+  drivers,
 }: {
   label: string;
   accent: string;
@@ -174,6 +221,8 @@ function LuckDetail({
   metric: Metric;
   /** Total Bernoulli trials behind this metric, for converting λ to a rate. */
   encounters: number;
+  /** What is responsible for the width of this prediction. */
+  drivers: Driver[];
 }) {
   const ratio = luck.lambdaRatio;
   const ratioKnown = Number.isFinite(ratio) && ratio > 0;
@@ -192,6 +241,30 @@ function LuckDetail({
       <div className="mt-1.5 text-xs">
         <LuckLine luck={luck} metric={metric} />
       </div>
+
+      {(luck.tooUncertain || luck.outOfBand) && drivers.length > 0 && (
+        <p className="mt-2 rounded-lg border border-sky-400/40 bg-sky-400/10 px-2.5 py-1.5 text-[11px] leading-relaxed text-sky-100">
+          <span className="font-medium">Where that width comes from:</span>{' '}
+          {drivers.slice(0, 3).map((d, i) => (
+            <span key={d.label}>
+              {i > 0 && ', '}
+              {d.label} <span className="text-sky-300/80">{Math.round(d.share * 100)}%</span>
+            </span>
+          ))}
+          .{' '}
+          {drivers[0].isAssumption ? (
+            <>
+              The biggest contributor is an <strong>assumption, not a medal</strong> — narrow it
+              under Assumptions and this gets sharper fast.
+            </>
+          ) : (
+            <>
+              The biggest contributor is a shiny rate estimate — narrow it with the{' '}
+              <em>info</em> button on that medal.
+            </>
+          )}
+        </p>
+      )}
 
       {luck.outOfBand ? (
         <Callout tone="error" title="This is a calibration warning, not a brag">
