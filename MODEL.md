@@ -239,10 +239,17 @@ falsifiable rather than silent.
   this the app would scream at you the whole time you were typing.
 - **The medals count the wrong verb.** Champion counts raids *won*, not bosses
   *caught*; Hero counts Rocket members *defeated*, not shadows *caught*;
-  Pokémon Ranger counts field research tasks *completed*, most of which reward
-  items rather than an encounter. Each of these makes the app **overestimate**
-  encounters from that source. Pokémon Ranger is the worst offender — treat it
-  as an upper bound and lower it.
+  Pokémon Ranger counts field research tasks *completed*, a large share of which
+  reward items rather than an encounter. Each makes the app **overestimate**
+  encounters from that source.
+
+  Pokémon Ranger was the worst offender, and is now handled properly: it is a
+  reference denominator, and the encounter count is derived from it at 40/60/75%
+  (see §3.4). This was found from a real account reporting 57 hundos against a
+  predicted 76 — treating all 5,400 completed tasks as floor-10 encounters was
+  inflating the hundo prediction by roughly 10. Champion and Hero still count
+  the wrong verb and are still not corrected for it, because unlike research
+  there is no published base rate for how often you flee a raid boss.
 - **Special and Timed Research encounters are not counted by any medal.**
   Pokémon Ranger covers Field Research only. Add them by hand.
 - **Subsets are treated as mutually exclusive.** A weather-boosted Community
@@ -268,6 +275,7 @@ medal-backed parent:
 | Shadow raids | Champion | 0 / 1 / 4 % |
 | Rocket Leaders | Hero | 5 / 12 / 20 % |
 | Weather-boosted grunt shadows | Hero | 15 / 25 / 40 % |
+| Research encounters | Pokémon Ranger | 40 / 60 / 75 % |
 | Shiny trades | Gentleman | 4 / 12 / 25 % |
 | Lucky trades | shiny trades | 5 / 15 / 35 % |
 | Good / Great / Ultra trades | shiny trades | 0-8 / 0-10 / 0-15 % |

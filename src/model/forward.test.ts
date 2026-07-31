@@ -65,7 +65,7 @@ describe('rate config integrity', () => {
   it('uses the documented encounter IV floors', () => {
     expect(SOURCES_BY_ID['collector'].ivFloor).toBe(0);
     expect(SOURCES_BY_ID['wild-weather'].ivFloor).toBe(4);
-    expect(SOURCES_BY_ID['research'].ivFloor).toBe(10);
+    expect(SOURCES_BY_ID['research-encounter'].ivFloor).toBe(10);
     expect(SOURCES_BY_ID['eggs'].ivFloor).toBe(10);
     expect(SOURCES_BY_ID['raid-champion'].ivFloor).toBe(10);
     expect(SOURCES_BY_ID['raid-legend'].ivFloor).toBe(10);
@@ -235,6 +235,47 @@ describe('deriving counts from medals', () => {
   });
 });
 
+describe('research encounters are derived, not equal to tasks completed', () => {
+  it('treats the Ranger medal as a denominator, not as encounters', () => {
+    // The medal counts tasks COMPLETED; most reward items, not a Pokémon.
+    expect(SOURCES_BY_ID['research'].kind).toBe('reference');
+    expect(SOURCES_BY_ID['research'].subsetOf).toBeUndefined();
+    const r = result({ research: 5_400 }, 'research');
+    expect(r.lambdaShiny).toBe(0);
+    expect(r.lambdaHundo).toBe(0);
+  });
+
+  it('derives the encounter count as a share of tasks completed', () => {
+    const f = SOURCES_BY_ID['research-encounter'].derivedFrom!.fraction.mid;
+    const r = result({ research: 5_400 }, 'research-encounter');
+    expect(r.rawCount).toBe(Math.round(5_400 * f));
+    expect(r.rawCount).toBeLessThan(5_400);
+    expect(r.ivFloor).toBe(10);
+  });
+
+  it('predicts fewer hundos than treating every task as an encounter', () => {
+    // Regression for the reported 57-observed-vs-76-predicted gap: counting all
+    // 5,400 Ranger tasks as floor-10 encounters inflated the hundo prediction.
+    const withMedal = runModel(inputs({ collector: 95_000, research: 5_400 }), 'mid');
+    const asIfAllEncounters = runModel(
+      inputs({ collector: 95_000, research: 5_400 }, {
+        assumptions: { 'research-encounter': { low: 1, mid: 1, high: 1 } },
+      }),
+      'mid',
+    );
+    expect(withMedal.lambdaHundo).toBeLessThan(asIfAllEncounters.lambdaHundo);
+  });
+
+  it('carves research encounters out of Collector, but not the task count', () => {
+    const counts = { collector: 50_000, research: 5_000 };
+    const encounters = result(counts, 'research-encounter').rawCount;
+    // Only the encounters are catches; the tasks themselves are not.
+    expect(result(counts, 'collector').effectiveCount).toBeLessThan(50_000);
+    expect(encounters).toBeGreaterThan(0);
+    expect(encounters).toBeLessThan(5_000);
+  });
+});
+
 describe('medal nesting', () => {
   it('points every subsetOf at a source that exists', () => {
     for (const s of SOURCES) {
@@ -248,7 +289,7 @@ describe('medal nesting', () => {
       expect(depthOf(s.id), `${s.id} depth`).toBeLessThan(8);
     }
     const roots = SOURCES.filter((s) => !s.subsetOf).map((s) => s.id).sort();
-    expect(roots).toEqual(['collector', 'eggs', 'gentleman', 'purifier']);
+    expect(roots).toEqual(['collector', 'eggs', 'gentleman', 'purifier', 'research']);
   });
 
   it('nests everything under the medal that actually contains it', () => {
@@ -300,9 +341,10 @@ describe('medal nesting', () => {
       giovanni: 30,
     };
     // Collector loses every direct child, which now includes the independent
-    // Battle Legend and Ultra Hero counters.
+    // Battle Legend and Ultra Hero counters. Research contributes nothing here
+    // because the encounter share is zeroed by `patch`.
     expect(result(counts, 'collector', patch).effectiveCount).toBe(
-      100_000 - (1_000 + 2_000 + 500 + 5_000 + 30),
+      100_000 - (2_000 + 500 + 5_000 + 30),
     );
     // Champion keeps its full count: Legendary raids are not carved out of it.
     expect(result(counts, 'raid-champion', patch).effectiveCount).toBe(2_000);

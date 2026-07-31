@@ -37,7 +37,7 @@
  *   │   └── Shadow raids                                 [derived]
  *   ├── Battle Legend "Win ___ Legendary raids"          [MEDAL]
  *   ├── Ultra Hero "Defeat Giovanni ___ time(s)"         [MEDAL]
- *   ├── Pokémon Ranger "Complete ___ Field Research tasks"  [MEDAL]
+ *   ├── research encounters                             [derived from Ranger]
  *   └── Hero "Defeat ___ Team GO Rocket members"         [MEDAL]
  *       └── Leaders / weather-boosted grunts             [derived]
  *
@@ -51,6 +51,8 @@
  * counters. They are therefore siblings under Collector, and both are entered
  * exactly as the game shows them.
  *
+ *   Pokémon Ranger "Complete ___ Field Research tasks"   [MEDAL, own root]
+ *   └── research encounters   (a share of tasks reward items, not a Pokémon)
  *   Breeder "Hatch ___ Eggs"                             [MEDAL, own root]
  *   Gentleman "Trade ___ Pokémon"                        [MEDAL, own root]
  *   └── shiny trades                                     [derived]
@@ -183,17 +185,44 @@ export const SOURCES: SourceDef[] = [
     id: 'research',
     label: 'Field Research tasks completed',
     category: 'Catches',
+    kind: 'reference',
+    ivFloor: 0,
+    medal: MEDALS.ranger,
+    confidence: 'high',
+    note:
+      'Counts tasks COMPLETED, not Pokémon caught — a large share of tasks reward ' +
+      'items or Stardust instead of an encounter. This is the denominator; the ' +
+      'encounter count is derived from it below. Special and Timed Research are not ' +
+      'counted by this medal at all.',
+    citation:
+      'Pokémon Ranger medal, "Complete ___ Field Research tasks". Bulbapedia, "Medal (GO)".',
+  },
+  {
+    id: 'research-encounter',
+    label: 'Research encounters',
+    category: 'Catches',
     kind: 'catch',
     ivFloor: 10,
     shinyRate: band(512, 64, 32),
     subsetOf: 'collector',
-    medal: MEDALS.ranger,
+    medal: null,
+    medalNote:
+      'No medal counts research ENCOUNTERS — only tasks completed. Derived from your ' +
+      'Pokémon Ranger medal.',
+    derivedFrom: {
+      parentId: 'research',
+      fraction: pct(40, 60, 75),
+      rationale:
+        'Share of completed Field Research tasks that rewarded a Pokémon rather than ' +
+        'items or Stardust. Leek Duck\u2019s task list runs about 70% encounter-rewarding, ' +
+        'but a dozen tasks can give either, the pool rotates monthly, and you do not ' +
+        'complete a random sample of it — so the band is deliberately wide.',
+    },
     confidence: 'low',
     note:
-      'The medal counts tasks COMPLETED, not encounters caught — many tasks reward ' +
-      'items instead of a Pokémon, and Special/Timed Research is not counted at all. ' +
-      'Treat this as an upper bound and lower it if you want to be careful.',
-    citation: `~1/64 for Field Research tasks; floor 10/10/10. ${BULBAPEDIA_SHINY} / ${DITTOBASE_FLOORS}`,
+      'Field research baseline is ~1/64 shiny, but event research runs far hotter and ' +
+      'ordinary tasks colder.',
+    citation: `~1/64 for Field Research tasks; floor 10/10/10. ${BULBAPEDIA_SHINY} / ${DITTOBASE_FLOORS} Encounter share counted from Leek Duck's current Field Research list (https://leekduck.com/research/): 87 tasks, 61 rewarding an encounter, though 12 of those can reward items instead. Not a stable figure — the pool rotates monthly.`,
   },
 
   // ================================================================= Raids ==

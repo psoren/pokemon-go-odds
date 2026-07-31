@@ -75,9 +75,11 @@ Medal names, in-game descriptions and all four tier thresholds are from
 and live in [`src/config/medals.ts`](src/config/medals.ts). Tapping a tier chip
 in the UI fills in that threshold, for when you have already maxed a medal out.
 
-The last two are not encounter sources. **Gentleman** is the denominator the
-shiny-trade estimate is built on; **Purifier** sets what share of your shadows
-get the purification IV bonus.
+Three of these are not encounter counts. **Gentleman** is the denominator the
+shiny-trade estimate is built on, **Purifier** sets what share of your shadows
+get the purification IV bonus, and **Pokémon Ranger** counts tasks *completed* —
+a large share of which reward items rather than a Pokémon, so the encounter
+count is derived from it rather than equal to it.
 
 ## Everything else is derived, and you can ignore it
 
@@ -92,6 +94,7 @@ behind a collapsed **Assumptions** panel:
 | Weather-boosted catches | Collector | 30% |
 | Community Day featured species | Collector | 3% |
 | Other event-boosted catches | Collector | 8% |
+| Research encounters | Pokémon Ranger | 60% |
 | Shadow raids | Champion | 1% |
 | Rocket Leaders | Hero | 12% |
 | Weather-boosted grunt shadows | Hero | 25% |
